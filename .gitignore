@@ -44,7 +44,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Keystore files (IMPORTANT: Keep these secure and never commit them)
-*.jks
-*.keystore
-android/key.properties
+# # Keystore files (IMPORTANT: Keep these secure and never commit them)
+# *.jks
+# *.keystore
+# android/key.properties
