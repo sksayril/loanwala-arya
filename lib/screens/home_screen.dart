@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 import 'check_cibil_score_screen.dart';
 import 'customize_loan_screen.dart';
 import 'emi_calculator_screen.dart';
@@ -58,11 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTopBar(),
-              const SizedBox(height: 24),
               _buildCibilScoreCard(context),
-              const SizedBox(height: 24),
-              _buildTrustBadges(),
               const SizedBox(height: 24),
               // Only show loan type section if isActive is true
               if (_isApplyNowActive) ...[
@@ -70,87 +67,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 24),
               ],
               _buildCalculatorsSection(context),
-
             ],
           ),
         ),
       ),
-
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Row(
-      children: [
-        Stack(
-          children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: Colors.transparent,
-              child: ClipOval(
-                child: Image.asset(
-                  'assets/20260130_231228.png',
-                  width: 48,
-                  height: 48,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome back,',
-              style: GoogleFonts.inter(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
-            ),
-            Text(
-              'Easy Loan',
-              style: GoogleFonts.inter(
-                color: Colors.black,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const Spacer(),
-        Stack(
-          children: [
-            const Icon(Icons.notifications_none_rounded, size: 28, color: Colors.black87),
-            Positioned(
-              right: 2,
-              top: 2,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -159,159 +79,103 @@ class _HomeScreenState extends State<HomeScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2E7BFA), Color(0xFF5C9DFF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: const Color(0xFF4CAF50), // Green background like EMI Calculator
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2E7BFA).withOpacity(0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: const Color(0xFF4CAF50).withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Financial Health',
-            style: GoogleFonts.inter(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Check Free CIBIL Score',
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Track your credit report monthly',
-            style: GoogleFonts.inter(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Stacked Avatars Placeholder
-              SizedBox(
-                width: 80,
-                height: 30,
-                child: Stack(
-                  children: [
-                    _buildAvatarPlaceholder(0, Colors.grey),
-                    _buildAvatarPlaceholder(20, Colors.grey[400]!),
-                    Positioned(
-                       left: 40,
-                       child: CircleAvatar(
-                         radius: 15,
-                         backgroundColor: const Color(0xFF1E5BB0),
-                         child: Text(
-                           '+2M',
-                           style: GoogleFonts.inter(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                         ),
-                       ),
-                    )
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CheckCibilScreen(),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Check Now',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF2E7BFA),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.arrow_forward_rounded, color: Color(0xFF2E7BFA), size: 16),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvatarPlaceholder(double left, Color color) {
-    return Positioned(
-      left: left,
-      child: CircleAvatar(
-        radius: 15,
-        backgroundColor: Colors.white,
-        child: CircleAvatar(
-          radius: 13,
-          backgroundColor: color,
-          child: const Icon(Icons.person, size: 16, color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTrustBadges() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEEF4FF),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD6E4FF)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildTrustItem(Icons.verified_user_rounded, '100% Secure'),
-          Container(width: 1, height: 20, color: Colors.grey[300]),
-          _buildTrustItem(Icons.lock_rounded, 'RBI Registered'),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Financial Health',
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Check Free CIBIL Score',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Track your credit report monthly',
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CheckCibilScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Click Here',
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF4CAF50),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CAF50),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.arrow_forward, color: Colors.white, size: 14),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Lottie Animation on the right
+          SizedBox(
+            width: 120,
+            height: 120,
+            child: Lottie.asset(
+              'assets/CreditLottie.json',
+              fit: BoxFit.contain,
+              repeat: true,
+              animate: true,
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTrustItem(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: const Color(0xFF2E7BFA), size: 18),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: GoogleFonts.inter(
-            color: const Color(0xFF1A3B6E), // Darker status blue
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
-        ),
-      ],
     );
   }
 
@@ -350,9 +214,9 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisCount: 3,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 1.0,
+              childAspectRatio: 0.9,
               children: [
-                _buildLoanCard(context, Icons.payments_rounded, 'Personal Loan',),
+                _buildLoanCard(context, Icons.account_balance_wallet_rounded, 'Personal Loan', color: Colors.blue),
                 _buildLoanCard(context, Icons.home_rounded, 'Home Loan', color: Colors.orange),
                 _buildLoanCard(context, Icons.business_center_rounded, 'Business Loan', color: Colors.purple),
                 _buildLoanCard(context, Icons.school_rounded, 'Education Loan', color: Colors.amber),
@@ -383,77 +247,58 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
-      child: SizedBox(
-        width: double.infinity,
-        height: double.infinity,
-        child: Stack(
-          clipBehavior: Clip.none,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              iconColor.withOpacity(0.05),
+              iconColor.withOpacity(0.02),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 15,
+              spreadRadius: 0,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: double.infinity,
-              height: double.infinity,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: iconColor.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: iconColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(icon, color: iconColor, size: 24),
-                  ),
-                  const SizedBox(height: 12),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (badge != null)
-              Positioned(
-                top: -8,
-                right: -8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE0F7E9),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    badge,
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFF1E8E3E),
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+              child: Center(
+                child: Icon(
+                  icon,
+                  color: iconColor,
+                  size: 32,
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1A1A1A),
+                height: 1.2,
+              ),
+            ),
           ],
         ),
       ),
@@ -479,20 +324,21 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisCount: 2,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 2.2,
+          childAspectRatio: 1.3,
           children: [
-            _buildCalcItem(context, Icons.calculate_rounded, 'EMI Calculator', Colors.blue, const EmiCalculatorScreen()),
-            _buildCalcItem(context, Icons.trending_up_rounded, 'SIP Calculator', Colors.green, const SipCalculatorScreen()),
-            _buildCalcItem(context, Icons.account_balance_rounded, 'Income Tax', Colors.orange, const IncomeTaxCalculatorScreen()),
-            _buildCalcItem(context, Icons.receipt_long_rounded, 'VAT Calculator', Colors.red, const VatCalculatorScreen()),
-            _buildCalcItem(context, Icons.home_work_rounded, 'House Rent', Colors.purple, const HouseRentCalculatorScreen()),
+            _buildCalcItem(context, 'GST', Colors.orange, const EmiCalculatorScreen()),
+            _buildCalcItem(context, 'VAT', Colors.blue, const VatCalculatorScreen()),
+            _buildCalcItem(context, 'PPF', Colors.green, const SipCalculatorScreen()),
+            _buildCalcItem(context, 'SIP', Colors.red, const SipCalculatorScreen()),
+            _buildCalcItem(context, 'RD', Colors.purple, const HouseRentCalculatorScreen()),
+            _buildCalcItem(context, 'FD', Colors.amber[700]!, const HouseRentCalculatorScreen()),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildCalcItem(BuildContext context, IconData icon, String title, Color color, Widget screen) {
+  Widget _buildCalcItem(BuildContext context, String title, Color color, Widget screen) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -506,37 +352,82 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.05),
+              color: Colors.grey.withOpacity(0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+        child: Stack(
+          children: [
+            // Background abstract shape
+            Positioned(
+              left: -10,
+              top: 20,
+              child: Opacity(
+                opacity: 0.1,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Calculator',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: color.withOpacity(0.2)),
+                        ),
+                        child: Icon(Icons.arrow_forward_ios, color: color, size: 12),
+                      ),
+                      SizedBox(
+                        width: 70,
+                        height: 70,
+                        child: Lottie.asset(
+                          'assets/Calculator.json',
+                          fit: BoxFit.contain,
+                          repeat: true,
+                          animate: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

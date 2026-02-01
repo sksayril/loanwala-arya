@@ -12,7 +12,7 @@ class LoanOffersScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF8F9FD),
       appBar: AppBar(
         title: Text(
-          'Loan Wala',
+          'Easy Loan',
           style: GoogleFonts.inter(
             color: Colors.black,
             fontWeight: FontWeight.bold,

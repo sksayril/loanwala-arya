@@ -44,97 +44,135 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: Text('EMI Calculator', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      body: SafeArea(
         child: Column(
           children: [
-            // Result Card
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6C3EE8), Color(0xFF8E66F1)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF6C3EE8).withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
+            // Custom Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
                 children: [
-                  Text(
-                    'Monthly EMI',
-                    style: GoogleFonts.inter(color: Colors.white70, fontSize: 16),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    onPressed: () => Navigator.pop(context),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(width: 8),
                   Text(
-                    '₹${emi.toStringAsFixed(0)}',
+                    'EMI Calculator',
                     style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 36,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
-                  const Divider(color: Colors.white24, height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildResultItem('Total Interest', '₹${totalInterest.toStringAsFixed(0)}'),
-                      _buildResultItem('Total Payment', '₹${totalPayment.toStringAsFixed(0)}'),
-                    ],
-                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 32),
-            
-            // Input Section
-            _buildSliderSection(
-              'Loan Amount',
-              '₹${loanAmount.toInt()}',
-              loanAmount,
-              10000,
-              5000000,
-              (val) {
-                setState(() => loanAmount = val);
-                _calculateEmi();
-              },
-            ),
-            const SizedBox(height: 24),
-            _buildSliderSection(
-              'Interest Rate (p.a)',
-              '${interestRate.toStringAsFixed(1)}%',
-              interestRate,
-              1,
-              30,
-              (val) {
-                setState(() => interestRate = val);
-                _calculateEmi();
-              },
-            ),
-            const SizedBox(height: 24),
-            _buildSliderSection(
-              'Tenure (Months)',
-              '${tenure.toInt()} Mo',
-              tenure,
-              3,
-              360,
-              (val) {
-                setState(() => tenure = val);
-                _calculateEmi();
-              },
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    // Premium Result Card
+                    Container(
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF8A2BE2), Color(0xFF9370DB)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF8A2BE2).withOpacity(0.4),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Monthly EMI',
+                            style: GoogleFonts.inter(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '₹${emi.toStringAsFixed(0)}',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontSize: 42,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: -1,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Container(
+                            height: 1,
+                            color: Colors.white.withOpacity(0.2),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildResultItem('Total Interest', '₹${totalInterest.toStringAsFixed(0)}'),
+                              _buildResultItem('Total Payment', '₹${totalPayment.toStringAsFixed(0)}'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    
+                    // Premium Input Sections
+                    _buildPremiumSliderSection(
+                      'Loan Amount',
+                      '₹${loanAmount.toInt()}',
+                      loanAmount,
+                      10000,
+                      5000000,
+                      Icons.account_balance_wallet_outlined,
+                      (val) {
+                        setState(() => loanAmount = val);
+                        _calculateEmi();
+                      },
+                    ),
+                    const SizedBox(height: 28),
+                    _buildPremiumSliderSection(
+                      'Interest Rate (p.a)',
+                      '${interestRate.toStringAsFixed(1)}%',
+                      interestRate,
+                      1,
+                      30,
+                      Icons.trending_up_outlined,
+                      (val) {
+                        setState(() => interestRate = val);
+                        _calculateEmi();
+                      },
+                    ),
+                    const SizedBox(height: 28),
+                    _buildPremiumSliderSection(
+                      'Tenure (Months)',
+                      '${tenure.toInt()} Mo',
+                      tenure,
+                      3,
+                      360,
+                      Icons.calendar_today_outlined,
+                      (val) {
+                        setState(() => tenure = val);
+                        _calculateEmi();
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -146,33 +184,107 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.inter(color: Colors.white70, fontSize: 12)),
-        const SizedBox(height: 4),
-        Text(value, style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            color: Colors.white.withOpacity(0.85),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildSliderSection(String label, String value, double current, double min, double max, Function(double) onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
-            Text(value, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF6C3EE8))),
-          ],
-        ),
-        Slider(
-          value: current,
-          min: min,
-          max: max,
-          activeColor: const Color(0xFF6C3EE8),
-          inactiveColor: const Color(0xFF6C3EE8).withOpacity(0.1),
-          onChanged: onChanged,
-        ),
-      ],
+  Widget _buildPremiumSliderSection(
+    String label,
+    String value,
+    double current,
+    double min,
+    double max,
+    IconData icon,
+    Function(double) onChanged,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8A2BE2).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: const Color(0xFF8A2BE2),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF8A2BE2),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: const Color(0xFF8A2BE2),
+              inactiveTrackColor: const Color(0xFF8A2BE2).withOpacity(0.15),
+              thumbColor: const Color(0xFF8A2BE2),
+              overlayColor: const Color(0xFF8A2BE2).withOpacity(0.1),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+              trackHeight: 4,
+            ),
+            child: Slider(
+              value: current,
+              min: min,
+              max: max,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
