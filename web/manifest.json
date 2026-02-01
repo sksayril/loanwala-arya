@@ -1,11 +1,11 @@
 {
-    "name": "Easy Loan",
-    "short_name": "easyloan",
+    "name": "Loan Kart",
+    "short_name": "Loan Kart",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#002B5B",
     "theme_color": "#6C3EE8",
-    "description": "A new Flutter project.",
+    "description": "Loan Kart - Premium Fintech Application",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

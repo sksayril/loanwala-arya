@@ -1,4 +1,4 @@
-package com.easyloan.app
+package com.loankart.app
 
 import io.flutter.embedding.android.FlutterActivity
 

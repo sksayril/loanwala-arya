@@ -54,22 +54,89 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA), // Light greyish background
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildCibilScoreCard(context),
-              const SizedBox(height: 24),
-              // Only show loan type section if isActive is true
-              if (_isApplyNowActive) ...[
-                _buildLoanTypeSection(),
-                const SizedBox(height: 24),
-              ],
-              _buildCalculatorsSection(context),
-            ],
-          ),
+        child: Column(
+          children: [
+            _buildHeaderBar(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCibilScoreCard(context),
+                    const SizedBox(height: 24),
+                    // Only show loan type section if isActive is true
+                    if (_isApplyNowActive) ...[
+                      _buildLoanTypeSection(),
+                      const SizedBox(height: 24),
+                    ],
+                    _buildCalculatorsSection(context),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1A3B5D), // Match CIBIL card top color
+            Color(0xFF244A70), // Match CIBIL card bottom color
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Bank icon
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.account_balance,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // App name
+          Text(
+            'LoanKart',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Spacer(),
+          // Bell icon
+          IconButton(
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: Colors.white,
+              size: 24,
+            ),
+            onPressed: () {},
+          ),
+        ],
       ),
     );
   }
@@ -77,102 +144,133 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCibilScoreCard(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF4CAF50), // Green background like EMI Calculator
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFF1A3B5D), // Darker blue at top
+            const Color(0xFF244A70), // Slightly lighter blue at bottom
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4CAF50).withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Row(
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Financial Health',
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Credit Health label
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: Text(
+                  'Credit Health',
                   style: GoogleFonts.inter(
                     color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Check Free CIBIL Score',
+              ),
+              const SizedBox(height: 12),
+              // Score Placeholder (---)
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 140,
+                    height: 140,
+                    child: Lottie.asset(
+                      'assets/CreditLottie.json',
+                      fit: BoxFit.contain,
+                      repeat: true,
+                      animate: true,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              // Updated status
+              Text(
+                'Updated 2 days ago',
+                style: GoogleFonts.inter(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Divider
+              Container(
+                height: 1,
+                width: double.infinity,
+                color: Colors.white.withOpacity(0.1),
+              ),
+              const SizedBox(height: 12),
+              // Call to action text
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text(
+                  'Unlock better loan offers by tracking your score.',
+                  textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 13,
+                    height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Track your credit report monthly',
-                  style: GoogleFonts.inter(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CheckCibilScreen(),
+              ),
+              const SizedBox(height: 16),
+              // Check CIBIL Score button
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CheckCibilScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF5CCB86), // Brighter green matching image
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF5CCB86).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
                       ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Click Here',
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF4CAF50),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF4CAF50),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.arrow_forward, color: Colors.white, size: 14),
-                        ),
-                      ],
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      'Check CIBIL Score',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Lottie Animation on the right
-          SizedBox(
-            width: 120,
-            height: 120,
-            child: Lottie.asset(
-              'assets/CreditLottie.json',
-              fit: BoxFit.contain,
-              repeat: true,
-              animate: true,
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -188,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Choose Loan Type',
+                  'Apply for Loan',
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -200,29 +298,45 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text(
                     'View All',
                     style: GoogleFonts.inter(
-                      color: const Color(0xFF2E7BFA),
+                      color: const Color(0xFF5CCB86),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 3,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.9,
-              children: [
-                _buildLoanCard(context, Icons.account_balance_wallet_rounded, 'Personal Loan', color: Colors.blue),
-                _buildLoanCard(context, Icons.home_rounded, 'Home Loan', color: Colors.orange),
-                _buildLoanCard(context, Icons.business_center_rounded, 'Business Loan', color: Colors.purple),
-                _buildLoanCard(context, Icons.school_rounded, 'Education Loan', color: Colors.amber),
-                _buildLoanCard(context, Icons.directions_car_rounded, 'Car Loan', color: Colors.redAccent),
-                _buildLoanCard(context, Icons.emoji_events_rounded, 'Gold Loan', color: Colors.amber[700]),
-              ],
+            const SizedBox(height: 12),
+            _buildLoanListItem(
+              context,
+              'Personal Loan',
+              'Unsecured • Quick',
+              'Up to ₹5 Lakhs',
+              'FAST',
+              const Color(0xFFE0F2FE),
+              const Color(0xFF2E7BFA),
+              Icons.account_balance_wallet_rounded,
+            ),
+            const SizedBox(height: 12),
+            _buildLoanListItem(
+              context,
+              'Home Loan',
+              'Dream Home • Easy EMI',
+              'Up to ₹5 Crores',
+              'LOW RATES',
+              const Color(0xFFF0FDF4),
+              const Color(0xFF16A34A),
+              Icons.home_rounded,
+            ),
+            const SizedBox(height: 12),
+            _buildLoanListItem(
+              context,
+              'Education Loan',
+              'For Higher Studies',
+              'Up to ₹20 Lakhs',
+              'FLEXIBLE',
+              const Color(0xFFFAF5FF),
+              const Color(0xFF9333EA),
+              Icons.school_rounded,
             ),
           ],
         );
@@ -230,10 +344,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildLoanCard(BuildContext context, IconData icon, String title, {String? badge, Color? color}) {
-    // Default blue if no color provided
-    final iconColor = color ?? const Color(0xFF2E7BFA);
-    
+  Widget _buildLoanListItem(
+    BuildContext context,
+    String title,
+    String subtitle,
+    String amount,
+    String badgeText,
+    Color bgColor,
+    Color accentColor,
+    IconData icon,
+  ) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -242,64 +362,132 @@ class _HomeScreenState extends State<HomeScreen> {
             builder: (context) => CustomizeLoanScreen(
               loanType: title,
               loanIcon: icon,
-              loanColor: iconColor,
+              loanColor: accentColor,
             ),
           ),
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              iconColor.withOpacity(0.05),
-              iconColor.withOpacity(0.02),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 15,
-              spreadRadius: 0,
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 32,
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // Left Image/Icon Section
+              Container(
+                width: 100,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    size: 40,
+                    color: accentColor,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1A1A1A),
-                height: 1.2,
+              // Right Content Section
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            title,
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1A1A1A),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: accentColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              badgeText,
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: accentColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const Spacer(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Up to',
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                              Text(
+                                amount.substring(6), // Just the amount part
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1A3B5D),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 14,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -310,7 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Financial Calculators',
+          'Financial Tools',
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -322,23 +510,23 @@ class _HomeScreenState extends State<HomeScreen> {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.3,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.1,
           children: [
-            _buildCalcItem(context, 'GST', Colors.orange, const EmiCalculatorScreen()),
-            _buildCalcItem(context, 'VAT', Colors.blue, const VatCalculatorScreen()),
-            _buildCalcItem(context, 'PPF', Colors.green, const SipCalculatorScreen()),
-            _buildCalcItem(context, 'SIP', Colors.red, const SipCalculatorScreen()),
-            _buildCalcItem(context, 'RD', Colors.purple, const HouseRentCalculatorScreen()),
-            _buildCalcItem(context, 'FD', Colors.amber[700]!, const HouseRentCalculatorScreen()),
+            _buildCalcItem(context, 'GST', 'Plan your taxes', Icons.calculate_outlined, const Color(0xFFFFF7ED), const Color(0xFFEA580C), const EmiCalculatorScreen()),
+            _buildCalcItem(context, 'VAT', 'Value added tax', Icons. receipt_long_outlined, const Color(0xFFEFF6FF), const Color(0xFF2563EB), const VatCalculatorScreen()),
+            _buildCalcItem(context, 'PPF', 'Public provident fund', Icons.savings_outlined, const Color(0xFFF0FDF4), const Color(0xFF16A34A), const SipCalculatorScreen()),
+            _buildCalcItem(context, 'SIP', 'Estimate your returns', Icons.trending_up_rounded, const Color(0xFFFFF1F2), const Color(0xFFE11D48), const SipCalculatorScreen()),
+            _buildCalcItem(context, 'RD', 'Recurring deposit', Icons.account_balance_outlined, const Color(0xFFFAF5FF), const Color(0xFF9333EA), const HouseRentCalculatorScreen()),
+            _buildCalcItem(context, 'FD', 'Fixed deposit', Icons.lock_outline_rounded, const Color(0xFFFEFCE8), const Color(0xFFCA8A04), const HouseRentCalculatorScreen()),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildCalcItem(BuildContext context, String title, Color color, Widget screen) {
+  Widget _buildCalcItem(BuildContext context, String title, String subtitle, IconData icon, Color bgColor, Color iconColor, Widget screen) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -347,84 +535,51 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Background abstract shape
-            Positioned(
-              left: -10,
-              top: 20,
-              child: Opacity(
-                opacity: 0.1,
-                child: Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                ),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 24,
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Calculator',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: color.withOpacity(0.2)),
-                        ),
-                        child: Icon(Icons.arrow_forward_ios, color: color, size: 12),
-                      ),
-                      SizedBox(
-                        width: 70,
-                        height: 70,
-                        child: Lottie.asset(
-                          'assets/Calculator.json',
-                          fit: BoxFit.contain,
-                          repeat: true,
-                          animate: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1A1A1A),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: Colors.grey[600],
+                height: 1.3,
               ),
             ),
           ],

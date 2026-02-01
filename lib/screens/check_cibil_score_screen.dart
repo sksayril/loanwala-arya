@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 import 'cibil_loading_screen.dart';
 
 class CheckCibilScreen extends StatefulWidget {
@@ -64,9 +65,9 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFFF8F9FB),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5F7FA),
+        backgroundColor: const Color(0xFFF8F9FB),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
@@ -92,11 +93,11 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
               _buildInfoBanner(),
               const SizedBox(height: 24),
               _buildFormFields(),
-              const SizedBox(height: 16),
-              _buildTermsCheckbox(),
+              const SizedBox(height: 24),
+              _buildTermsCard(),
               const SizedBox(height: 24),
               _buildSubmitButton(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               _buildSecureBadge(),
               const SizedBox(height: 40),
             ],
@@ -109,15 +110,15 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   Widget _buildInfoBanner() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -127,38 +128,39 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 100% Secure Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(20),
+                    color: const Color(0xFFF3E8FF),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.verified_user_rounded, size: 14, color: Color(0xFF2E7BFA)),
+                      const Icon(Icons.verified_user_rounded, size: 14, color: Color(0xFF8B5CF6)),
                       const SizedBox(width: 4),
                       Text(
                         '100% Secure',
                         style: GoogleFonts.inter(
-                          color: const Color(0xFF2E7BFA),
+                          color: const Color(0xFF8B5CF6),
                           fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 Text(
                   'Free Credit Report',
                   style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: const Color(0xFF1A1A1A),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
                   'Get detailed insights with no impact on your score.',
                   style: GoogleFonts.inter(
@@ -171,17 +173,15 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          // Circular gauge icon placeholder
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0F2FE),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.speed_rounded, 
-              size: 40,
-              color: Color(0xFF2E7BFA),
+          // Lottie Animation instead of static circle
+          SizedBox(
+            width: 100,
+            height: 100,
+            child: Lottie.asset(
+              'assets/CreditLottie.json',
+              fit: BoxFit.contain,
+              repeat: true,
+              animate: true,
             ),
           ),
         ],
@@ -190,165 +190,187 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   }
 
   Widget _buildFormFields() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLabel('Full Name (as per PAN)'),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _nameController,
-            decoration: _inputDecoration('e.g. Rahul Sharma'),
-            style: GoogleFonts.inter(),
-          ),
-          
-          const SizedBox(height: 20),
-          _buildLabel('Mobile Number'),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            decoration: _inputDecoration('98765 43210', prefix: '+91'),
-             style: GoogleFonts.inter(),
-          ),
-
-          const SizedBox(height: 20),
-          _buildLabel('PAN Number'),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _panController,
-            textCapitalization: TextCapitalization.characters,
-            decoration: _inputDecoration('ABCDE1234F', suffixIcon: Icons.badge_outlined),
-             style: GoogleFonts.inter(),
-          ),
-
-          const SizedBox(height: 20),
-          _buildLabel('Date of Birth'),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _dobController,
-            readOnly: true,
-            onTap: () => _selectDate(context),
-            decoration: _inputDecoration('dd/mm/yyyy', suffixIcon: Icons.calendar_today_rounded),
-             style: GoogleFonts.inter(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: Colors.black87,
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String hint, {String? prefix, IconData? suffixIcon}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[200]!),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[300]!),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2E7BFA)),
-      ),
-      prefixIcon: prefix != null ? Padding(
-        padding: const EdgeInsets.only(left: 16, right: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              prefix,
-              style: GoogleFonts.inter(
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      ) : null,
-      suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: Colors.grey[400]) : null,
-    );
-  }
-
-  Widget _buildTermsCheckbox() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
       children: [
-        SizedBox(
-          height: 24,
-          width: 24,
-          child: Checkbox(
-            value: _agreedToTerms,
-            activeColor: const Color(0xFF2E7BFA),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-            onChanged: (value) {
-              setState(() {
-                _agreedToTerms = value ?? false;
-              });
-            },
-          ),
+        _buildCustomTextField(
+          controller: _nameController,
+          label: 'Full Name (as per PAN)',
+          hint: 'Enter your full name',
+          icon: Icons.person_outline_rounded,
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: RichText(
-            text: TextSpan(
-              style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600], height: 1.5),
-              children: [
-                const TextSpan(text: 'I hereby appoint LoanSahay as my authorized representative to receive my credit information from CIBIL. I agree to the '),
-                TextSpan(
-                  text: 'Terms & Conditions',
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFF2E7BFA),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const TextSpan(text: ' and '),
-                TextSpan(
-                  text: 'Privacy Policy',
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFF2E7BFA),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const TextSpan(text: '.'),
-              ],
-            ),
-          ),
+        const SizedBox(height: 16),
+        _buildCustomTextField(
+          controller: _phoneController,
+          label: 'Mobile Number',
+          hint: '+91 98765 43210',
+          icon: Icons.phone_android_rounded,
+          keyboardType: TextInputType.phone,
+        ),
+        const SizedBox(height: 16),
+        _buildCustomTextField(
+          controller: _panController,
+          label: 'PAN Number',
+          hint: 'ABCDE1234F',
+          icon: Icons.badge_outlined,
+          textCapitalization: TextCapitalization.characters,
+        ),
+        const SizedBox(height: 16),
+        _buildCustomTextField(
+          controller: _dobController,
+          label: 'Date of Birth',
+          hint: 'DD/MM/YYYY',
+          icon: Icons.calendar_today_rounded,
+          readOnly: true,
+          onTap: () => _selectDate(context),
         ),
       ],
     );
   }
 
+  Widget _buildCustomTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    TextInputType? keyboardType,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        readOnly: readOnly,
+        onTap: onTap,
+        keyboardType: keyboardType,
+        textCapitalization: textCapitalization,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: GoogleFonts.inter(color: Colors.grey[600], fontSize: 14),
+          hintText: hint,
+          hintStyle: GoogleFonts.inter(color: Colors.grey[400], fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFF8B5CF6), size: 20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTermsCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 24,
+            width: 24,
+            child: Checkbox(
+              value: _agreedToTerms,
+              activeColor: const Color(0xFF8B5CF6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+              onChanged: (value) {
+                setState(() {
+                  _agreedToTerms = value ?? false;
+                });
+              },
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RichText(
+                  text: TextSpan(
+                    style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600], height: 1.5),
+                    children: [
+                      const TextSpan(text: 'I hereby appoint Loan Kart as my authorized representative to receive my credit information from CIBIL. '),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () {},
+                      child: Text(
+                        'Terms & Conditions',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF8B5CF6),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {},
+                      child: Text(
+                        'Privacy Policy',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF8B5CF6),
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSubmitButton() {
-    return SizedBox(
+    return Container(
       width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8B5CF6).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: ElevatedButton(
         onPressed: () {
           if (_formKey.currentState!.validate() && _agreedToTerms) {
@@ -356,19 +378,15 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
                context,
                MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
              );
-          } else if (!_agreedToTerms) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please agree to the Terms & Conditions')),
-            );
           }
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF2E7BFA),
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(30),
           ),
-          elevation: 0,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -393,14 +411,14 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.lock_rounded, size: 16, color: Colors.grey),
+        const Icon(Icons.lock_outline_rounded, size: 16, color: Color(0xFF8B5CF6)),
         const SizedBox(width: 8),
         Text(
           '256-BIT SECURE ENCRYPTION',
           style: GoogleFonts.inter(
             color: Colors.grey[500],
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
           ),
         ),
