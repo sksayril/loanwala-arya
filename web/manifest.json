@@ -1,6 +1,6 @@
 {
-    "name": "loanwala",
-    "short_name": "loanwala",
+    "name": "Easy Loan",
+    "short_name": "easyloan",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#002B5B",

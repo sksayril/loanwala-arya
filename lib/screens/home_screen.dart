@@ -123,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Text(
-              'Loan Wala',
+              'Easy Loan',
               style: GoogleFonts.inter(
                 color: Colors.black,
                 fontSize: 18,

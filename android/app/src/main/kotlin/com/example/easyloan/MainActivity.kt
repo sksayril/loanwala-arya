@@ -1,4 +1,4 @@
-package com.example.loanwala
+package com.example.easyloan
 
 import io.flutter.embedding.android.FlutterActivity
 

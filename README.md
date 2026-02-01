@@ -1,4 +1,4 @@
-# loanwala
+# Easy Loan
 
 A new Flutter project.
 
