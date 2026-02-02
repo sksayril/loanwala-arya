@@ -1,5 +1,5 @@
-name: loan_kart
-description: "Loan Kart - Premium Fintech Application"
+name: super_loan
+description: "Super Loan - Premium Fintech Application"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -72,6 +72,7 @@ flutter:
     # - assets/20260130_231228.png
     # - assets/easyloanlogo.png
     - assets/20260201_204647.png
+    - assets/superloan.png
     - assets/CreditLottie.json
     - assets/Calculator.json
 
@@ -107,19 +108,22 @@ flutter_launcher_icons:
   ios: true
   # image_path: "assets/20260130_231228.png"
   # image_path: "assets/easyloanlogo.png"
-  image_path: "assets/20260201_204647.png"
+  # image_path: "assets/20260201_204647.png"
+  image_path: "assets/superloan.png"
   remove_alpha_ios: true
   min_sdk_android: 21 # android min sdk min:16, default 21
   web:
     generate: true
     # image_path: "assets/easyloanlogo.png"
-    image_path: "assets/20260201_204647.png"
+    # image_path: "assets/20260201_204647.png"
+    image_path: "assets/superloan.png"
     # image_path: "assets/20260130_231228.png"
     background_color: "#002B5B"
     theme_color: "#6C3EE8"
   windows:
     generate: true
     # image_path: "assets/easyloanlogo.png"
-    image_path: "assets/20260201_204647.png"
+    image_path: "assets/superloan.png"
+    # image_path: "assets/20260201_204647.png"
     # image_path: "assets/20260130_231228.png"
     icon_size: 48 # min:48, max:256, default: 48

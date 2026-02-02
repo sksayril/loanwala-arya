@@ -1,11 +1,11 @@
 {
-    "name": "Loan Kart",
-    "short_name": "Loan Kart",
+    "name": "Super Loan",
+    "short_name": "Super Loan",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#002B5B",
     "theme_color": "#6C3EE8",
-    "description": "Loan Kart - Premium Fintech Application",
+    "description": "Super Loan - Premium Fintech Application",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

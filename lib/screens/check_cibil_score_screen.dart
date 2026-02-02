@@ -313,7 +313,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
                   text: TextSpan(
                     style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600], height: 1.5),
                     children: [
-                      const TextSpan(text: 'I hereby appoint Loan Kart as my authorized representative to receive my credit information from CIBIL. '),
+                      const TextSpan(text: 'I hereby appoint Super Loan as my authorized representative to receive my credit information from CIBIL. '),
                     ],
                   ),
                 ),

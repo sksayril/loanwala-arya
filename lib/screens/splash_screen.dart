@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -11,25 +10,40 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+  late AnimationController _progressController;
+  late AnimationController _pulseController;
   late Animation<double> _progressAnimation;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    
+    // Progress bar animation
+    _progressController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
     );
 
     _progressAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _progressController, curve: Curves.easeInOut),
     );
 
-    _controller.forward();
+    // Pulse animation for the icon
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
 
-    _controller.addStatusListener((status) {
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _pulseController.repeat(reverse: true);
+    _progressController.forward();
+
+    _progressController.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         if (mounted) {
           Navigator.of(context).pushReplacement(
@@ -42,9 +56,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
-    _controller.dispose();
+    _progressController.dispose();
+    _pulseController.dispose();
     super.dispose();
-  }
+  }     
 
   @override
   Widget build(BuildContext context) {
@@ -57,145 +72,197 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF0D47A1), // Deep blue from image
-              Color(0xFF1A237E), // Darker blue at bottom
+              Color(0xFFE8F5E9), // Light mint green at top
+              Color(0xFFF1F8E9), // Slightly lighter in middle
+              Color(0xFFE8F5E9), // Light mint green at bottom
             ],
           ),
         ),
-        child: Stack(
-          children: [
-            Center(
-              child: Column(
+        child: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+              // Center content
+              Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo Section (LK in a box)
-                  Container(
-                    width: 120,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    ),
-                    child: Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'L',
-                            style: GoogleFonts.inter(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                  // Logo - White circle with lightning bolt
+                  AnimatedBuilder(
+                    animation: _pulseAnimation,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _pulseAnimation.value,
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF4CAF50).withOpacity(0.15),
+                                blurRadius: 40,
+                                spreadRadius: 10,
+                              ),
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2E7BFA),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'K',
-                              style: GoogleFonts.inter(
-                                fontSize: 40,
-                                fontWeight: FontWeight.bold,
+                          child: Center(
+                            child: ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Color(0xFF4CAF50), // Light green
+                                  Color(0xFF2E7D32), // Dark green
+                                ],
+                              ).createShader(bounds),
+                              child: const Icon(
+                                Icons.bolt_rounded,
+                                size: 70,
                                 color: Colors.white,
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  // App Name
-                  Text(
-                    'Loan Kart',
-                    style: GoogleFonts.inter(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Tagline
-                  Text(
-                    'PREMIUM FINTECH',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: Colors.white.withOpacity(0.7),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Bottom Loader and Footer
-            Positioned(
-              bottom: 60,
-              left: 60,
-              right: 60,
-              child: Column(
-                children: [
-                  // Animated Progress Bar
-                  AnimatedBuilder(
-                    animation: _progressAnimation,
-                    builder: (context, child) {
-                      return Container(
-                        height: 4,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: _progressAnimation.value,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2E7BFA),
-                              borderRadius: BorderRadius.circular(2),
                             ),
                           ),
                         ),
                       );
                     },
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 40),
+                  // App Name
                   Text(
-                    'INITIALIZING SECURE ENVIRONMENT',
+                    'Super Loan',
                     style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: Colors.white.withOpacity(0.5),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
+                      fontSize: 42,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1A1A1A),
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  // Footer
+                  const SizedBox(height: 12),
+                  // Tagline
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_circle_outline, color: Colors.white.withOpacity(0.5), size: 14),
-                      const SizedBox(width: 8),
                       Text(
-                        'ENCRYPTED & SECURE',
+                        'Secure',
                         style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white.withOpacity(0.5),
-                          letterSpacing: 1,
+                          fontSize: 16,
+                          color: const Color(0xFF4CAF50),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          '•',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            color: const Color(0xFF4CAF50),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'Instant',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          color: const Color(0xFF4CAF50),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          '•',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            color: const Color(0xFF4CAF50),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'Transparent',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          color: const Color(0xFF4CAF50),
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
-          ],
+              const Spacer(flex: 2),
+              // Bottom section with loader and footer
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 50),
+                child: Column(
+                  children: [
+                    // "INITIALIZING" text
+                    Text(
+                      'INITIALIZING',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: const Color(0xFF666666),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Animated Progress Bar
+                    AnimatedBuilder(
+                      animation: _progressAnimation,
+                      builder: (context, child) {
+                        return Container(
+                          height: 6,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE0E0E0),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: _progressAnimation.value,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF4CAF50),
+                                    Color(0xFF2E7D32),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+              // Footer
+              Padding(
+                padding: const EdgeInsets.only(bottom: 30),
+                child: Text(
+                  'REGULATED BY RBI  •  TRUSTED BY MILLIONS',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF888888),
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
