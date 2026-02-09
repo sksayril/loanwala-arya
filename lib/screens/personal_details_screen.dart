@@ -45,18 +45,18 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFF0A0E1A), // Dark background
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Personal Details',
           style: GoogleFonts.inter(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -79,7 +79,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       Text(
                         "Let's get to know you",
                         style: GoogleFonts.inter(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
@@ -88,7 +88,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       Text(
                         'Please enter your details exactly as they appear on your PAN card for quick verification.',
                         style: GoogleFonts.inter(
-                          color: Colors.grey[600],
+                          color: Colors.grey[400],
                           fontSize: 14,
                           height: 1.5,
                         ),
@@ -101,7 +101,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       TextFormField(
                         controller: _nameController,
                         decoration: _inputDecoration(hintText: 'e.g. Rahul Sharma'),
-                        style: GoogleFonts.inter(fontSize: 16),
+                        style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
                         textCapitalization: TextCapitalization.words,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -121,9 +121,9 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: const Color(0xFF1A1F2E),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: Colors.grey[800]!),
                             ),
                             child: Row(
                               children: [
@@ -140,7 +140,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                                   style: GoogleFonts.inter(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ],
@@ -155,7 +155,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                               decoration: _inputDecoration(
                                 hintText: '98765 43210',
                               ).copyWith(counterText: ""),
-                              style: GoogleFonts.inter(fontSize: 16),
+                              style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
                               validator: (value) {
                                 if (value == null || value.length != 10) {
                                   return 'Enter a valid 10-digit number';
@@ -178,7 +178,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                         decoration: _inputDecoration(
                           hintText: 'ABCDE1234F',
                         ).copyWith(counterText: ""),
-                        style: GoogleFonts.inter(fontSize: 16, letterSpacing: 1.0),
+                        style: GoogleFonts.inter(fontSize: 16, letterSpacing: 1.0, color: Colors.white),
                         validator: (value) {
                           if (value == null || value.length != 10) {
                             return 'Enter a valid PAN number';
@@ -208,13 +208,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: const Color(0xFF1A1F2E),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: Colors.grey[800]!),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _selectedEmploymentType,
+                            dropdownColor: const Color(0xFF1A1F2E),
                             hint: Text(
                               'Select your employment type',
                               style: GoogleFonts.inter(color: Colors.grey[400]),
@@ -226,7 +227,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                                 value: type,
                                 child: Text(
                                   type,
-                                  style: GoogleFonts.inter(color: Colors.black87),
+                                  style: GoogleFonts.inter(color: Colors.white),
                                 ),
                               );
                             }).toList(),
@@ -245,12 +246,12 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.lock_rounded, size: 14, color: Color(0xFF1E8E3E)),
+                          const Icon(Icons.lock_rounded, size: 14, color: Color(0xFF10B981)),
                           const SizedBox(width: 8),
                           Text(
                             'Your data is 256-bit encrypted & secure',
                             style: GoogleFonts.inter(
-                              color: Colors.grey[600],
+                              color: Colors.grey[400],
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -266,15 +267,8 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
             // Next Button
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
+              decoration: const BoxDecoration(
+                color: Color(0xFF0A0E1A),
               ),
               child: SizedBox(
                 width: double.infinity,
@@ -325,7 +319,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
     return Text(
       text,
       style: GoogleFonts.inter(
-        color: Colors.grey[700],
+        color: Colors.grey[400],
         fontSize: 11,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.8,
@@ -336,17 +330,17 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   InputDecoration _inputDecoration({required String hintText}) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
+      hintStyle: GoogleFonts.inter(color: Colors.grey[600]),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: const Color(0xFF1A1F2E),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderSide: BorderSide(color: Colors.grey[800]!),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderSide: BorderSide(color: Colors.grey[800]!),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

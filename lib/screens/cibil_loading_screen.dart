@@ -74,7 +74,7 @@ class _CibilLoadingScreenState extends State<CibilLoadingScreen> with SingleTick
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0A0E1A), // Dark background
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -132,7 +132,7 @@ class _CibilLoadingScreenState extends State<CibilLoadingScreen> with SingleTick
                 style: GoogleFonts.inter(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
               ),

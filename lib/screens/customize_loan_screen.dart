@@ -20,13 +20,13 @@ class CustomizeLoanScreen extends StatefulWidget {
 }
 
 class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
-  double _loanAmount = 180000;
-  int _selectedTenure = 9; // in months
+  double _loanAmount = 20000;
+  int _selectedTenure = 12; // in months
   bool _agreedToTerms = true;
 
-  final double _minLoan = 10000;
-  final double _maxLoan = 500000;
-  final double _interestRate = 12.0; // 12% p.a.
+  final double _minLoan = 1000;
+  final double _maxLoan = 50000;
+  final double _interestRate = 18.0; // 18% p.a.
 
   double _calculateEMI() {
     double monthlyRate = _interestRate / (12 * 100);
@@ -40,16 +40,16 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
     double emi = _calculateEMI();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF2C2E3A),
+      backgroundColor: const Color(0xFF0A0E1A), // Dark background
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2C2E3A),
+        backgroundColor: const Color(0xFF0A0E1A),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Customize Your Loan',
+          'Select Loan Amount',
           style: GoogleFonts.inter(
             color: Colors.white,
             fontSize: 18,
@@ -66,58 +66,98 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
-                  // Amount Display and Slider
+                  const SizedBox(height: 10),
+                  // Amount Display
                   Center(
-                    child: Text(
-                      '₹${_loanAmount.toStringAsFixed(0).replaceAllMapped(
-                            RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"),
-                            (Match m) => "${m[1]},",
-                          )}',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
-                      ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'TOTAL AMOUNT',
+                          style: GoogleFonts.inter(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '₹${_loanAmount.toStringAsFixed(0).replaceAllMapped(
+                                RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"),
+                                (Match m) => "${m[1]},",
+                              )}',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 40),
                   // Slider
                   SliderTheme(
                     data: SliderThemeData(
-                      trackHeight: 8,
-                      activeTrackColor: const Color(0xFF8B5CF6),
-                      inactiveTrackColor: const Color(0xFF4A4C5A),
-                      thumbColor: Colors.white,
+                      trackHeight: 4,
+                      activeTrackColor: const Color(0xFF10B981), // Green
+                      inactiveTrackColor: Colors.grey[800],
+                      thumbColor: const Color(0xFF10B981),
                       thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 16,
+                        enabledThumbRadius: 10,
                         elevation: 4,
                       ),
-                      overlayColor: const Color(0xFF8B5CF6).withOpacity(0.3),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+                      overlayColor: const Color(0xFF10B981).withOpacity(0.2),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 20),
                       trackShape: const RoundedRectSliderTrackShape(),
                     ),
                     child: Slider(
                       value: _loanAmount,
                       min: _minLoan,
                       max: _maxLoan,
-                      divisions: 98,
                       onChanged: (double value) {
                         setState(() {
-                          _loanAmount = value;
+                          _loanAmount = (value / 1000).round() * 1000.0;
                         });
                       },
                     ),
                   ),
-                  const SizedBox(height: 50),
-                  // First Tenure Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('₹1,000', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12)),
+                        Text('₹50,000', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  // Amount Presets Grid
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    childAspectRatio: 2.5,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    children: [
+                      _buildAmountPreset(1000),
+                      _buildAmountPreset(10000),
+                      _buildAmountPreset(20000),
+                      _buildAmountPreset(50000),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+                  // Select Tenure Section
                   Text(
-                    'Select Tenure',
+                    'SELECT TENURE',
                     style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 18,
+                      color: Colors.grey[400],
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: 1,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -131,121 +171,193 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
                     ],
                   ),
                   const SizedBox(height: 40),
-                  // Second Tenure Section
-                  Text(
-                    'Select Tenure',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(child: _buildTenureButton(3)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildTenureButton(9)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildTenureButton(12)),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                  // EMI Info Card
+                  // EMI Info Card (Gradient)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF3A3D4A),
-                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFEF4444).withOpacity(0.2), // Reddish
+                          const Color(0xFF3B82F6).withOpacity(0.2), // Bluish
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.1),
+                        width: 1,
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Stack(
                       children: [
-                        Text(
-                          'Monthly EMI: ₹${emi.toStringAsFixed(0).replaceAllMapped(
-                                RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"),
-                                (Match m) => "${m[1]},",
-                              )}',
-                          style: GoogleFonts.inter(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ESTIMATED MONTHLY EMI',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[400],
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  '₹${emi.toStringAsFixed(0).replaceAllMapped(
+                                        RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"),
+                                        (Match m) => "${m[1]},",
+                                      )}',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 32,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '/mo',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            const Divider(color: Colors.white10),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Interest Rate', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12)),
+                                    const SizedBox(height: 4),
+                                    Text('${_interestRate.toStringAsFixed(0)}% p.a.', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text('Tenure', style: GoogleFonts.inter(color: Colors.grey[500], fontSize: 12)),
+                                    const SizedBox(height: 4),
+                                    Text('$_selectedTenure Months', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Interest: ${_interestRate.toStringAsFixed(0)}% p.a.',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w500,
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.calculate_outlined, color: Colors.white, size: 20),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30),
-                  // Continue Button
-                  SizedBox(
-                    width: double.infinity,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF8B5CF6),
-                            Color(0xFF6366F1),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ElevatedButton(
-                        onPressed: _agreedToTerms
-                            ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PersonalDetailsScreen(
-                                      loanAmount: _loanAmount,
-                                      tenure: _selectedTenure,
-                                      loanType: widget.loanType,
-                                    ),
-                                  ),
-                                );
-                              }
-                            : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Continue',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 32),
+                  // Info points
+                  _buildInfoPoint('Instant approval in 5 mins'),
+                  const SizedBox(height: 12),
+                  _buildInfoPoint('Minimal documentation required'),
+                  const SizedBox(height: 12),
+                  _buildInfoPoint('No hidden fees or charges'),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
           ),
+          // Bottom Button
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PersonalDetailsScreen(
+                        loanAmount: _loanAmount,
+                        tenure: _selectedTenure,
+                        loanType: widget.loanType,
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3B82F6), // Blue
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Proceed to KYC',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.arrow_forward, size: 20),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAmountPreset(double amount) {
+    bool isSelected = _loanAmount == amount;
+    return GestureDetector(
+      onTap: () => setState(() => _loanAmount = amount),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF1A1F2E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF3B82F6) : Colors.grey[800]!,
+            width: 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            '₹${amount.toStringAsFixed(0).replaceAllMapped(
+                  RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"),
+                  (Match m) => "${m[1]},",
+                )}',
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -261,25 +373,49 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF8B5CF6).withOpacity(0.2) : const Color(0xFF3A3D4A),
+          color: isSelected ? const Color(0xFF3B82F6) : const Color(0xFF1A1F2E),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? const Color(0xFF8B5CF6) : const Color(0xFF4A4C5A),
-            width: isSelected ? 2 : 1,
+            color: isSelected ? const Color(0xFF3B82F6) : Colors.grey[800]!,
+            width: 1,
           ),
         ),
         child: Center(
           child: Text(
             '$months MONTHS',
             style: GoogleFonts.inter(
-              color: isSelected ? const Color(0xFF8B5CF6) : Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               letterSpacing: 0.5,
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoPoint(String text) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: const BoxDecoration(
+            color: Color(0xFF10B981),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.check, color: Colors.white, size: 12),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          text,
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

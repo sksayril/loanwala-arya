@@ -17,18 +17,18 @@ class LoanDetailsScreen extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
     
     return Scaffold(
-      backgroundColor: themeProvider.backgroundColor,
+      backgroundColor: const Color(0xFF0A0E1A), // Black-based background matching home screen
       appBar: AppBar(
-        backgroundColor: themeProvider.cardBackground,
+        backgroundColor: const Color(0xFF0A0E1A), // Dark background matching home screen
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: themeProvider.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           'Loan Details',
           style: TextStyle(
-            color: themeProvider.textPrimary,
+            color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -46,10 +46,10 @@ class LoanDetailsScreen extends StatelessWidget {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: const Color(0xFF1C1E26), // Dark card background
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.grey.shade300,
+                      color: Colors.grey.shade700,
                       width: 1,
                     ),
                   ),
@@ -63,7 +63,7 @@ class LoanDetailsScreen extends StatelessWidget {
                             errorBuilder: (context, error, stackTrace) {
                               return Icon(
                                 Icons.account_balance,
-                                color: Colors.grey.shade600,
+                                color: Colors.grey.shade400,
                                 size: 40,
                               );
                             },
@@ -71,7 +71,7 @@ class LoanDetailsScreen extends StatelessWidget {
                         )
                       : Icon(
                           Icons.account_balance,
-                          color: Colors.grey.shade600,
+                          color: Colors.grey.shade400,
                           size: 40,
                         ),
                 ),
@@ -82,10 +82,10 @@ class LoanDetailsScreen extends StatelessWidget {
                     children: [
                       Text(
                         loan.companyName ?? 'Financial Institution',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: themeProvider.textPrimary,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -93,7 +93,7 @@ class LoanDetailsScreen extends StatelessWidget {
                         loan.title ?? 'Loan',
                         style: TextStyle(
                           fontSize: 14,
-                          color: themeProvider.textSecondary,
+                          color: Colors.grey[400],
                         ),
                       ),
                     ],
@@ -107,9 +107,9 @@ class LoanDetailsScreen extends StatelessWidget {
             if (loan.description != null && loan.description!.isNotEmpty) ...[
               Text(
                 loan.description!,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
-                  color: themeProvider.textPrimary,
+                  color: Colors.white,
                   height: 1.5,
                 ),
               ),
@@ -154,7 +154,7 @@ class LoanDetailsScreen extends StatelessWidget {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A5F),
+                  backgroundColor: const Color(0xFF1A2E4E), // Dark blue matching home screen
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -194,7 +194,7 @@ class LoanDetailsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: const Color(0xFF1C1E26), // Dark card background matching home screen
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
@@ -210,7 +210,7 @@ class LoanDetailsScreen extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: themeProvider.textSecondary,
+                    color: Colors.grey[500],
                   ),
                 ),
                 const SizedBox(height: 4),

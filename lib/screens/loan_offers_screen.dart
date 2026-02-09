@@ -1,326 +1,419 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'loan_detail_modal.dart';
 
-class LoanOffersScreen extends StatelessWidget {
+class LoanOffersScreen extends StatefulWidget {
   const LoanOffersScreen({super.key});
+
+  @override
+  State<LoanOffersScreen> createState() => _LoanOffersScreenState();
+}
+
+class _LoanOffersScreenState extends State<LoanOffersScreen> {
+  int _selectedToggleIndex = 0; // 0 for Lowest Interest, 1 for Highest Amount
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FD),
+      backgroundColor: const Color(0xFF0A0E1A), // Dark background
       appBar: AppBar(
-        title: Text(
-          'Super Loan',
-          style: GoogleFonts.inter(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFF0A0E1A),
         elevation: 0,
-        centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.black),
-            onPressed: () {},
+        title: Text(
+          'Loan Offers',
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
-        ],
+        ),
+        centerTitle: true,
       ),
-      body: Stack(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            // Congratulations Banner
+            _buildCongratsBanner(),
+            const SizedBox(height: 24),
+            
+            // Toggle Section
+            _buildToggleSection(),
+            const SizedBox(height: 24),
+
+            // Loan Offers List
+            _buildLoanOfferCard(
+              providerName: 'Ram Fincorp',
+              providerSub: 'Get ₹10,000 Loan',
+              tag: 'BEST VALUE',
+              tagColor: const Color(0xFFE8F5E9),
+              tagTextColor: const Color(0xFF2E7D32),
+              amount: '₹5,00,000',
+              interestRate: '3% p.a.',
+              tenure: '60 months',
+              features: [
+                'Zero Pre-closure charges',
+                'Proc. Fee: ₹999 + GST',
+              ],
+              icon: Icons.currency_rupee_rounded,
+              iconBgColor: const Color(0xFFE3F2FD),
+              iconColor: const Color(0xFF1976D2),
+            ),
+            const SizedBox(height: 20),
+            _buildLoanOfferCard(
+              providerName: 'Poonawalla fincorp',
+              providerSub: 'Home Loan',
+              tag: 'INSTANT DISBURSAL',
+              tagColor: const Color(0xFFFFF3E0),
+              tagTextColor: const Color(0xFFE65100),
+              amount: '₹3,50,000',
+              interestRate: '7% p.a.',
+              tenure: '48 months',
+              features: [
+                'Disbursal in 2 hours',
+                'Proc. Fee: ₹1,499',
+              ],
+              icon: Icons.account_balance_rounded,
+              iconBgColor: const Color(0xFFF5F5F5),
+              iconColor: const Color(0xFF424242),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCongratsBanner() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1F2E),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
         children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.only(bottom: 100), // Space for bottom bar
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.celebration_rounded, color: Color(0xFF10B981), size: 30),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 10),
-                // Success Icon
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF22C55E).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 40),
-                ),
-                const SizedBox(height: 16),
-                // Title
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('🎉', style: TextStyle(fontSize: 24)),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Great News!',
-                      style: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
                 Text(
-                  'We found 4 pre-approved offers for you.',
+                  'Congratulations!',
                   style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 24),
-
-                // Loan Configuration Card
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'AMOUNT',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[500],
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '₹1,00,000',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          width: 1,
-                          height: 30,
-                          color: Colors.grey[300],
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'TENURE',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[500],
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '12 Months',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF3F4F6),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.edit, size: 16, color: Color(0xFF2563EB)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Filters
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    children: [
-                      _buildFilterChip('Best Match', isSelected: true, icon: Icons.stars),
-                      const SizedBox(width: 12),
-                      _buildFilterChip('Lowest EMI', isSelected: false),
-                      const SizedBox(width: 12),
-                      _buildFilterChip('Lowest Interest', isSelected: false),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Best Match Card
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _buildBestMatchCard(context),
-                ),
-                
-                const SizedBox(height: 24),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Other Great Offers',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Other Offers List
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      _buildOfferCard(
-                        name: 'QuickCash',
-                        tag: 'LOWEST EMI',
-                        tagColor: Colors.orange[100]!,
-                        tagTextColor: Colors.orange[800]!,
-                        icon: Icons.flash_on,
-                        iconBg: Colors.orange[50]!,
-                        iconColor: Colors.orange,
-                        emi: '₹8,990',
-                        rate: '1.35%',
-                        fee: '₹1,499',
-                        time: '4 hrs',
-                      ),
-                      const SizedBox(height: 16),
-                      _buildOfferCard(
-                        name: 'TrustLoan',
-                        tag: 'FASTEST',
-                        tagColor: Colors.purple[100]!,
-                        tagTextColor: Colors.purple[800]!,
-                        icon: Icons.rocket_launch,
-                        iconBg: Colors.purple[50]!,
-                        iconColor: Colors.purple,
-                        emi: '₹9,250',
-                        rate: '1.4%',
-                        fee: 'None',
-                        time: 'Instant',
-                        isInstant: true,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildOfferCard(
-                         name: 'SafeMoney',
-                        tag: 'LOW INTEREST',
-                        tagColor: Colors.blue[100]!,
-                        tagTextColor: Colors.blue[800]!,
-                        icon: Icons.shield,
-                        iconBg: Colors.blue[50]!,
-                        iconColor: Colors.blue,
-                        emi: '₹9,050',
-                        rate: '1.15%',
-                        fee: '₹1,999',
-                        time: '24 hrs',
-                      ),
-                    ],
+                const SizedBox(height: 4),
+                Text(
+                  'Based on your excellent credit score of 780, you have unlocked exclusive offers.',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: Colors.grey[400],
+                    height: 1.4,
                   ),
                 ),
               ],
             ),
           ),
-          
-          // Bottom Bar
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 20,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E2E),
-                borderRadius: BorderRadius.circular(20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleSection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildToggleButton(
+              index: 0,
+              label: 'Lowest Interest',
+              icon: Icons.percent_rounded,
+            ),
+          ),
+          Expanded(
+            child: _buildToggleButton(
+              index: 1,
+              label: 'Highest Amount',
+              icon: Icons.currency_rupee_rounded,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleButton({required int index, required String label, required IconData icon}) {
+    bool isSelected = _selectedToggleIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedToggleIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF1A2E4E) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: isSelected ? Border.all(color: Colors.white.withOpacity(0.1)) : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.white : Colors.grey[500],
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                color: isSelected ? Colors.white : Colors.grey[500],
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                     child: Row(
-                       children: [
-                         const Icon(Icons.timer_outlined, color: Colors.orange, size: 16),
-                         const SizedBox(width: 8),
-                         Text(
-                           'EXPIRES',
-                           style: GoogleFonts.inter(
-                             color: Colors.orange,
-                             fontSize: 12,
-                             fontWeight: FontWeight.bold,
-                           ),
-                         ),
-                         const SizedBox(width: 8),
-                         Expanded(
-                           child: Text(
-                             '23h : 59m Offers valid for limited time',
-                             style: GoogleFonts.inter(
-                               color: Colors.grey[400],
-                               fontSize: 11,
-                             ),
-                           ),
-                         ),
-                       ],
-                     ),
-                  ),
-                  Container(
-                    width: double.infinity,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: TextButton(
-                      onPressed: () {},
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Compare Offers',
-                            style: GoogleFonts.inter(
-                              color: Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.compare_arrows, color: Colors.black, size: 18),
-                        ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoanOfferCard({
+    required String providerName,
+    required String providerSub,
+    required String tag,
+    required Color tagColor,
+    required Color tagTextColor,
+    required String amount,
+    required String interestRate,
+    required String tenure,
+    required List<String> features,
+    required IconData icon,
+    required Color iconBgColor,
+    required Color iconColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1F2E),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Provider Info Row
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: iconBgColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: iconColor.withOpacity(0.2)),
+                ),
+                child: Icon(icon, color: iconColor, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      providerName,
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
+                    Text(
+                      providerSub,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: tagColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: tagColor.withOpacity(0.2)),
+                ),
+                child: Text(
+                  tag,
+                  style: GoogleFonts.inter(
+                    color: tagTextColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Sanctioned Amount
+          Text(
+            'SANCTIONED AMOUNT',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[500],
+              letterSpacing: 1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            amount,
+            style: GoogleFonts.inter(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Rate and Tenure Row
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'INTEREST RATE',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[500],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.trending_down_rounded, color: Color(0xFF10B981), size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          interestRate,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TENURE',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[500],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_month_rounded, color: Colors.grey, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          tenure,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Features
+          ...features.map((feature) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              children: [
+                Icon(
+                  feature.startsWith('Proc. Fee') ? Icons.info_outline_rounded : Icons.check_circle_rounded,
+                  size: 18,
+                  color: feature.startsWith('Proc. Fee') ? Colors.grey[500] : const Color(0xFF10B981),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  feature,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey[300],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          )),
+          const SizedBox(height: 20),
+
+          // Proceed Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3B82F6),
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Proceed',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
                 ],
               ),
             ),
@@ -329,435 +422,5 @@ class LoanOffersScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildFilterChip(String label, {bool isSelected = false, IconData? icon}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF111827) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isSelected ? const Color(0xFF111827) : Colors.grey[300]!),
-      ),
-      child: Row(
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16, color: isSelected ? Colors.white : Colors.black),
-            const SizedBox(width: 6),
-          ],
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              color: isSelected ? Colors.white : Colors.black,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBestMatchCard(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF2563EB), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF2563EB).withOpacity(0.1),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: const BoxDecoration(
-              color: Color(0xFF2563EB),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(22),
-                topRight: Radius.circular(22),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.thumb_up, color: Colors.white, size: 16),
-                    const SizedBox(width: 8),
-                    Text(
-                      'BEST MATCH',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  'Recommended for you',
-                  style: GoogleFonts.inter(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0E7FF),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.account_balance, color: Color(0xFF2563EB), size: 30),
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Instant Finance',
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                           decoration: BoxDecoration(
-                             color: const Color(0xFFDCFCE7),
-                             borderRadius: BorderRadius.circular(4),
-                           ),
-                           child: Row(
-                             mainAxisSize: MainAxisSize.min,
-                             children: [
-                               const Icon(Icons.check_circle, size: 12, color: Color(0xFF16A34A)),
-                               const SizedBox(width: 4),
-                               Text(
-                                 'Pre-Approved',
-                                 style: GoogleFonts.inter(
-                                   fontSize: 10,
-                                   fontWeight: FontWeight.bold,
-                                   color: const Color(0xFF16A34A),
-                                 ),
-                               ),
-                             ],
-                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Monthly EMI',
-                          style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500]),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '₹9,180',
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'Interest Rate',
-                          style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[500]),
-                        ),
-                        const SizedBox(height: 4),
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '1.2%',
-                                style: GoogleFonts.inter(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              TextSpan(
-                                text: '/mo',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FD),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildFeatureItem('No prepayment charges'),
-                      const SizedBox(height: 12),
-                      _buildFeatureItem('100% digital process'),
-                      const SizedBox(height: 12),
-                      _buildFeatureItem('Instant Disbursal'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => Container(
-                          height: MediaQuery.of(context).size.height * 0.9,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(25),
-                              topRight: Radius.circular(25),
-                            ),
-                          ),
-                          child: const LoanDetailModal(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Get Instant Cash',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureItem(String text) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: const BoxDecoration(
-            color: Color(0xFFDCFCE7),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.check, size: 12, color: Color(0xFF16A34A)),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          text,
-          style: GoogleFonts.inter(
-            fontSize: 13,
-            color: Colors.grey[700],
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOfferCard({
-    required String name,
-    required String tag,
-    required Color tagColor,
-    required Color tagTextColor,
-    required IconData icon,
-    required Color iconBg,
-    required Color iconColor,
-    required String emi,
-    required String rate,
-    required String fee,
-    required String time,
-    bool isInstant = false,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: iconBg,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(icon, color: iconColor, size: 20),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            Text(
-                              'Popular Choice',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'EMI',
-                          style: GoogleFonts.inter(fontSize: 10, color: Colors.grey[500]),
-                        ),
-                        Text(
-                          emi,
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildDetailColumn('RATE', '$rate/mo'),
-                    _buildDetailColumn('FEE', fee),
-                    _buildDetailColumn(isInstant ? 'Disbursal' : 'TIME', time, isHighlight: isInstant),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.grey[100]!)),
-            ),
-            child: Center(
-              child: Text(
-                'View Details',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFF2563EB),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailColumn(String label, String value, {bool isHighlight = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey[400],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: isHighlight ? const Color(0xFF16A34A) : Colors.black87,
-          ),
-        ),
-      ],
-    );
-  }
 }
+

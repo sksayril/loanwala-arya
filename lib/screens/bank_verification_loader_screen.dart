@@ -48,7 +48,7 @@ class _BankVerificationLoaderScreenState extends State<BankVerificationLoaderScr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0A0E1A), // Dark background
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -12,31 +12,49 @@ class KycVerificationScreen extends StatefulWidget {
 class _KycVerificationScreenState extends State<KycVerificationScreen> {
   final _aadhaarController = TextEditingController();
   final _panController = TextEditingController();
-  final _addressController = TextEditingController();
+  final _houseController = TextEditingController();
+  final _streetController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _pincodeController = TextEditingController();
+  
+  String _residenceType = 'Owned'; // 'Owned' or 'Rented'
+  String? _selectedState;
+
+  final List<String> _states = [
+    'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+    'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+    'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+    'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+    'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+    'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi'
+  ];
 
   @override
   void dispose() {
     _aadhaarController.dispose();
     _panController.dispose();
-    _addressController.dispose();
+    _houseController.dispose();
+    _streetController.dispose();
+    _cityController.dispose();
+    _pincodeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF0A0E1A), // Dark background
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF0A0E1A),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'KYC Verification',
+          'Address Details',
           style: GoogleFonts.inter(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -46,136 +64,208 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // Step Indicator
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _buildStepDot(false),
+                      const SizedBox(width: 8),
+                      _buildStepLine(true),
+                      const SizedBox(width: 8),
+                      _buildStepDot(false),
+                      const SizedBox(width: 8),
+                      _buildStepDot(false),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Step 2 of 4',
+                    style: GoogleFonts.inter(
+                      color: Colors.grey[500],
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsets.all(24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top Progress/Step Indicator (Optional, based on flow)
-                    
                     Text(
-                      'Identity Verification',
+                      'Where do you live?',
                       style: GoogleFonts.inter(
-                        color: Colors.black,
-                        fontSize: 22,
+                        color: Colors.white,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Please provide your official government documents to process your loan application securely.',
-                      style: GoogleFonts.inter(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
                     const SizedBox(height: 32),
 
-                    // Aadhaar Number Field
-                    _buildLabel('Aadhaar Number'),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _aadhaarController,
-                      keyboardType: TextInputType.number,
-                      decoration: _inputDecoration(
-                        hintText: '1234 5678 9012',
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF2E7BFA)),
-                          onPressed: () {
-                            // TODO: Implement scanner
-                          },
-                        ),
-                      ),
-                      style: GoogleFonts.inter(fontSize: 16),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // PAN Card Number Field
-                    _buildLabel('PAN Card Number'),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _panController,
-                      textCapitalization: TextCapitalization.characters,
-                      decoration: _inputDecoration(
-                        hintText: 'ABCDE1234F',
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.camera_alt_rounded, color: Color(0xFF2E7BFA)),
-                          onPressed: () {
-                            // TODO: Implement camera
-                          },
-                        ),
-                      ),
-                      style: GoogleFonts.inter(fontSize: 16),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Address Section
-                    _buildLabel('Full Address'),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _addressController,
-                      maxLines: 3,
-                      decoration: _inputDecoration(
-                        hintText: 'Enter your full residential address',
-                        suffixIcon: const Icon(Icons.location_on_rounded, color: Color(0xFF2E7BFA)),
-                      ),
-                      style: GoogleFonts.inter(fontSize: 16),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Security Banner
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF0F7FF), // Light blue bg
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFD6E4FF)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.lock_rounded, color: Color(0xFF2E7BFA), size: 20),
+                    // Residence Type
+                    _buildLabel('Residence Type'),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildResidenceTypeButton(
+                            icon: Icons.home_rounded,
+                            label: 'Owned',
+                            isSelected: _residenceType == 'Owned',
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Your data is 100% safe & encrypted with 256-bit SSL.',
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFF1E3A8A), // Dark blue text
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                height: 1.4,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildResidenceTypeButton(
+                            icon: Icons.business_center_rounded,
+                            label: 'Rented',
+                            isSelected: _residenceType == 'Rented',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    // House No Field
+                    _buildLabel('House No. / Building Name'),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _houseController,
+                      decoration: _inputDecoration(
+                        hintText: 'e.g. Flat 402, Sunshine Apts',
+                      ),
+                      style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Street Field
+                    _buildLabel('Street / Colony'),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _streetController,
+                      decoration: _inputDecoration(
+                        hintText: 'e.g. MG Road, Indiranagar',
+                      ),
+                      style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // City and Pincode Row
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('City'),
+                              const SizedBox(height: 12),
+                              TextFormField(
+                                controller: _cityController,
+                                decoration: _inputDecoration(
+                                  hintText: 'New York',
+                                ),
+                                style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
                               ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 2,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildLabel('Pincode'),
+                              const SizedBox(height: 12),
+                              TextFormField(
+                                controller: _pincodeController,
+                                keyboardType: TextInputType.number,
+                                decoration: _inputDecoration(
+                                  hintText: '10001',
+                                ),
+                                style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // State Dropdown
+                    _buildLabel('State'),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A1F2E),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey[800]!),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedState,
+                          dropdownColor: const Color(0xFF1A1F2E),
+                          hint: Text(
+                            'Select State',
+                            style: GoogleFonts.inter(color: Colors.grey[600]),
+                          ),
+                          isExpanded: true,
+                          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.grey),
+                          items: _states.map((String state) {
+                            return DropdownMenuItem<String>(
+                              value: state,
+                              child: Text(
+                                state,
+                                style: GoogleFonts.inter(color: Colors.white),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedState = newValue;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+
+                    // Security Note
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.lock_rounded, size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Your address details are encrypted and securely stored.',
+                            style: GoogleFonts.inter(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
             ),
             
             // Continue Button
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -188,20 +278,27 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                      );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2E7BFA), // Blue button
+                    backgroundColor: const Color(0xFF3B82F6), // Blue button
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Continue',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Continue',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                    ],
                   ),
                 ),
               ),
@@ -212,13 +309,86 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     );
   }
 
+  Widget _buildStepDot(bool isActive) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF3B82F6) : const Color(0xFF1E293B),
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
+  Widget _buildStepLine(bool isActive) {
+    return Container(
+      width: 24,
+      height: 4,
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF3B82F6) : const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+
+  Widget _buildResidenceTypeButton({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+  }) {
+    return GestureDetector(
+      onTap: () => setState(() => _residenceType = label),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1F2E),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF3B82F6) : Colors.grey[800]!,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            if (isSelected)
+              const Positioned(
+                right: 12,
+                top: 0,
+                bottom: 0,
+                child: Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF3B82F6),
+                  size: 16,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildLabel(String text) {
     return Text(
       text,
       style: GoogleFonts.inter(
-        color: Colors.black87,
+        color: Colors.grey[400],
         fontSize: 14,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w500,
       ),
     );
   }
@@ -226,22 +396,22 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   InputDecoration _inputDecoration({required String hintText, Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
+      hintStyle: GoogleFonts.inter(color: Colors.grey[600]),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: const Color(0xFF1A1F2E),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey[800]!),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey[800]!),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF2E7BFA), width: 2),
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 2),
       ),
     );
   }

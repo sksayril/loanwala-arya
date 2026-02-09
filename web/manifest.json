@@ -1,11 +1,11 @@
 {
-    "name": "Super Loan",
-    "short_name": "Super Loan",
+    "name": "Loan Guru",
+    "short_name": "Loan Guru",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#002B5B",
     "theme_color": "#6C3EE8",
-    "description": "Super Loan - Premium Fintech Application",
+    "description": "Loan Guru - Premium Fintech Application",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

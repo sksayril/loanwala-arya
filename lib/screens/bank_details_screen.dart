@@ -29,18 +29,18 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFF0A0E1A), // Dark background
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Bank Details',
           style: GoogleFonts.inter(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -62,19 +62,19 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE0F2F1), // Light green
+                            color: const Color(0xFF10B981).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFB2DFDB)),
+                            border: Border.all(color: const Color(0xFF10B981).withOpacity(0.2)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.lock_rounded, size: 16, color: Color(0xFF00897B)),
+                              const Icon(Icons.lock_rounded, size: 16, color: Color(0xFF10B981)),
                               const SizedBox(width: 8),
                               Text(
                                 '100% SECURE & ENCRYPTED',
                                 style: GoogleFonts.inter(
-                                  color: const Color(0xFF00695C),
+                                  color: const Color(0xFF10B981),
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
@@ -89,7 +89,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                         'We deposit your approved loan amount directly into this account. Please verify details carefully.',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
-                          color: Colors.grey[600],
+                          color: Colors.grey[400],
                           fontSize: 14,
                           height: 1.5,
                         ),
@@ -105,7 +105,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                           hintText: 'Enter your bank name',
                           suffixIcon: const Icon(Icons.account_balance_rounded, color: Color(0xFF7C3AED)),
                         ),
-                        style: GoogleFonts.inter(fontSize: 16),
+                        style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Enter bank name';
@@ -126,7 +126,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                           hintText: '1234XXXXXXXX',
                           suffixIcon: const Icon(Icons.credit_card_rounded, color: Colors.grey),
                         ),
-                        style: GoogleFonts.inter(fontSize: 16),
+                        style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Enter account number';
@@ -145,7 +145,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                         decoration: _inputDecoration(
                           hintText: 'Re-enter account number',
                         ),
-                        style: GoogleFonts.inter(fontSize: 16),
+                        style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
                         validator: (value) {
                           if (value != _accountController.text) {
                             return 'Account numbers do not match';
@@ -185,7 +185,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                         decoration: _inputDecoration(
                           hintText: 'HDFC0001234',
                         ),
-                        style: GoogleFonts.inter(fontSize: 16),
+                        style: GoogleFonts.inter(fontSize: 16, color: Colors.white),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -212,6 +212,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                                 });
                               },
                               activeColor: const Color(0xFF7C3AED),
+                              side: BorderSide(color: Colors.grey[600]!, width: 2),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -222,7 +223,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                             child: Text(
                               'I confirm that the bank details provided above are correct and the bank account belongs to me.',
                               style: GoogleFonts.inter(
-                                color: Colors.grey[700],
+                                color: Colors.grey[400],
                                 fontSize: 13,
                                 height: 1.4,
                               ),
@@ -239,15 +240,8 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
             // Verify Button
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
+              decoration: const BoxDecoration(
+                color: Color(0xFF0A0E1A),
               ),
               child: SizedBox(
                 width: double.infinity,
@@ -300,7 +294,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
     return Text(
       text,
       style: GoogleFonts.inter(
-        color: Colors.black87,
+        color: Colors.grey[400],
         fontSize: 14,
         fontWeight: FontWeight.w600,
       ),
@@ -310,18 +304,18 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
   InputDecoration _inputDecoration({required String hintText, Widget? suffixIcon}) {
     return InputDecoration(
       hintText: hintText,
-      hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
+      hintStyle: GoogleFonts.inter(color: Colors.grey[600]),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: const Color(0xFF1A1F2E),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderSide: BorderSide(color: Colors.grey[800]!),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderSide: BorderSide(color: Colors.grey[800]!),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

@@ -43,7 +43,7 @@ class _HouseRentCalculatorScreenState extends State<HouseRentCalculatorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: const Color(0xFF0A0E1A), // Dark background
       body: SafeArea(
         child: Column(
           children: [
@@ -53,7 +53,7 @@ class _HouseRentCalculatorScreenState extends State<HouseRentCalculatorScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const SizedBox(width: 8),
@@ -62,7 +62,7 @@ class _HouseRentCalculatorScreenState extends State<HouseRentCalculatorScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -157,7 +157,7 @@ class _HouseRentCalculatorScreenState extends State<HouseRentCalculatorScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                                  color: Colors.white,
                                 ),
                               ),
                               const SizedBox(height: 4),

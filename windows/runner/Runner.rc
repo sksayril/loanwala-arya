@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "Super Loan" "\0"
+            VALUE "FileDescription", "Loan Guru" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "super_loan" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Super Loan. All rights reserved." "\0"
-            VALUE "OriginalFilename", "super_loan.exe" "\0"
-            VALUE "ProductName", "Super Loan" "\0"
+            VALUE "InternalName", "aryatechloanguru" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Loan Guru. All rights reserved." "\0"
+            VALUE "OriginalFilename", "aryatechloanguru.exe" "\0"
+            VALUE "ProductName", "Loan Guru" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

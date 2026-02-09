@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/loan_api_service.dart';
 import '../providers/theme_provider.dart';
@@ -198,18 +199,18 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
-      backgroundColor: themeProvider.backgroundColor,
+      backgroundColor: const Color(0xFF0A0E1A), // Black-based background matching home screen
       appBar: AppBar(
-        backgroundColor: themeProvider.cardBackground,
+        backgroundColor: const Color(0xFF0A0E1A), // Dark background matching home screen
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: themeProvider.textPrimary),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Approved Offers',
           style: TextStyle(
-            color: themeProvider.textPrimary,
+            color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -258,275 +259,266 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
     // Determine badge for each card
     String? badge;
     Color? badgeColor;
+    Color? badgeTextColor;
     if (index == 0) {
       badge = 'BEST VALUE';
-      badgeColor = Colors.green.shade600;
+      badgeColor = const Color(0xFFE8F5E9);
+      badgeTextColor = const Color(0xFF2E7D32);
     } else if (index == 1) {
       badge = 'INSTANT DISBURSAL';
-      badgeColor = Colors.orange.shade600;
+      badgeColor = const Color(0xFFFFF3E0);
+      badgeTextColor = const Color(0xFFE65100);
     }
     
-    return InkWell(
-      onTap: () {
-        // Navigate directly to loan details (ads disabled)
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LoanDetailsScreen(loan: loan),
-          ),
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: themeProvider.themeMode == ThemeMode.dark
-              ? themeProvider.cardBackground
-              : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: themeProvider.themeMode == ThemeMode.dark
-                ? themeProvider.borderColor
-                : Colors.grey.shade200,
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Bank info and badge
-            Row(
-              children: [
-                // Bank logo - Circular
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.grey.shade100,
-                    border: Border.all(
-                      color: Colors.grey.shade300,
-                      width: 1,
-                    ),
-                  ),
-                  child: ClipOval(
-                    child: _buildBankLogo(loan.bankLogo, size: 50),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1C1E26), // Dark card background matching home screen
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Bank info and badge
+          Row(
+            children: [
+              // Bank logo - Circular
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFF5F5F5),
+                  border: Border.all(
+                    color: Colors.grey.shade200,
+                    width: 1,
                   ),
                 ),
-                const SizedBox(width: 12),
-                // Bank name and type
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        loan.companyName ?? 'Financial Institution',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: themeProvider.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        loan.title ?? 'Loan',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: themeProvider.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+                child: ClipOval(
+                  child: _buildBankLogo(loan.bankLogo, size: 50),
                 ),
-                // Badge
-                if (badge != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: badgeColor!.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      badge,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: badgeColor,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // SANCTIONED AMOUNT
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'SANCTIONED AMOUNT',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: themeProvider.textSecondary,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '₹${_getSanctionedAmount(index)}',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: themeProvider.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            // INTEREST RATE and TENURE in Row
-            Row(
-              children: [
-                // Interest Rate
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'INTEREST RATE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: themeProvider.textSecondary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.trending_down,
-                            size: 16,
-                            color: Colors.green.shade600,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${loan.interestRate ?? '10.5'}% p.a.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: themeProvider.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Tenure
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'TENURE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: themeProvider.textSecondary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today,
-                            size: 16,
-                            color: themeProvider.textSecondary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${_getTenure(index)} months',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: themeProvider.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // Additional Features
-            _buildFeatureRow(
-              Icons.check_circle,
-              _getFeatureText(index),
-              Colors.green,
-              themeProvider,
-            ),
-            const SizedBox(height: 8),
-            _buildFeatureRow(
-              Icons.info_outline,
-              'Proc. Fee: ${_getProcessingFee(index)}',
-              themeProvider.textSecondary,
-              themeProvider,
-            ),
-            const SizedBox(height: 16),
-            // Proceed button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Navigate directly to loan details (ads commented out)
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => LoanDetailsScreen(loan: loan),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A5F),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              ),
+              const SizedBox(width: 12),
+              // Bank name and type
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Proceed', 
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                    Text(
+                      loan.companyName ?? 'Financial Institution',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward, size: 18),
+                    const SizedBox(height: 2),
+                    Text(
+                      loan.title ?? 'Loan',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: Colors.grey[400],
+                      ),
+                    ),
                   ],
                 ),
               ),
+              // Badge
+              if (badge != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: badgeColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    badge,
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: badgeTextColor,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // SANCTIONED AMOUNT
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'SANCTIONED AMOUNT',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[500],
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '₹${_getSanctionedAmount(index)}',
+                style: GoogleFonts.inter(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // INTEREST RATE and TENURE in Row
+          Row(
+            children: [
+              // Interest Rate
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'INTEREST RATE',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[500],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.trending_down_rounded,
+                          size: 16,
+                          color: Color(0xFF4CAF50),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${loan.interestRate ?? '10.5'}% p.a.',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // Tenure
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TENURE',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[500],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_month_rounded,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_getTenure(index)} months',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Additional Features
+          Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Color(0xFF4CAF50), size: 18),
+              const SizedBox(width: 10),
+              Text(
+                _getFeatureText(index),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: Colors.grey[400],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Icon(Icons.info_outline_rounded, color: Colors.grey[400], size: 18),
+              const SizedBox(width: 10),
+              Text(
+                'Proc. Fee: ${_getProcessingFee(index)}',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: Colors.grey[400],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Proceed button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LoanDetailsScreen(loan: loan),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1A2E4E),
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Proceed', 
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                ],
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -748,20 +740,11 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
   // Build Congratulations Section
   Widget _buildCongratulationsSection(ThemeProvider themeProvider) {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: themeProvider.themeMode == ThemeMode.dark
-            ? themeProvider.cardBackground
-            : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: const Color(0xFF1C1E26), // Dark card background matching home screen
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         children: [
@@ -769,13 +752,13 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
           Container(
             width: 60,
             height: 60,
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE8F5E9),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.celebration,
-              color: Colors.green.shade600,
+            child: const Icon(
+              Icons.celebration_rounded,
+              color: Color(0xFF4CAF50),
               size: 30,
             ),
           ),
@@ -787,18 +770,18 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
               children: [
                 Text(
                   'Congratulations!',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: themeProvider.textPrimary,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Based on your excellent credit score of 780, you have unlocked exclusive offers.',
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: themeProvider.textSecondary,
+                    color: Colors.grey[400],
                     height: 1.4,
                   ),
                 ),
@@ -818,19 +801,17 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
         children: [
           Expanded(
             child: _buildFilterButton(
-              icon: Icons.percent,
+              icon: Icons.percent_rounded,
               label: 'Lowest Interest',
               isSelected: true,
-              themeProvider: themeProvider,
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: _buildFilterButton(
-              icon: Icons.currency_rupee,
+              icon: Icons.currency_rupee_rounded,
               label: 'Highest Amount',
               isSelected: false,
-              themeProvider: themeProvider,
             ),
           ),
         ],
@@ -842,23 +823,15 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
     required IconData icon,
     required String label,
     required bool isSelected,
-    required ThemeProvider themeProvider,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
         color: isSelected
-            ? const Color(0xFF1E3A5F)
-            : themeProvider.themeMode == ThemeMode.dark
-                ? themeProvider.cardBackground
-                : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isSelected
-              ? const Color(0xFF1E3A5F)
-              : themeProvider.borderColor,
-          width: 1,
-        ),
+            ? const Color(0xFF1A2E4E)
+            : const Color(0xFF1C1E26).withOpacity(0.8), // Dark card background
+        borderRadius: BorderRadius.circular(16),
+        border: isSelected ? Border.all(color: Colors.white.withOpacity(0.1)) : Border.all(color: Colors.grey.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -866,19 +839,15 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
           Icon(
             icon,
             size: 18,
-            color: isSelected
-                ? Colors.white
-                : themeProvider.textSecondary,
+            color: isSelected ? Colors.white : Colors.grey[400],
           ),
           const SizedBox(width: 8),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isSelected
-                  ? Colors.white
-                  : themeProvider.textPrimary,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? Colors.white : Colors.grey[400],
             ),
           ),
         ],
@@ -891,9 +860,7 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: themeProvider.themeMode == ThemeMode.dark
-            ? themeProvider.cardBackground
-            : Colors.grey.shade50,
+        color: const Color(0xFF0A0E1A), // Black background matching home screen
       ),
       child: Column(
         children: [
@@ -910,21 +877,21 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
                 '100% Secure',
                 style: TextStyle(
                   fontSize: 12,
-                  color: themeProvider.textSecondary,
+                  color: Colors.grey[400],
                 ),
               ),
               const SizedBox(width: 24),
               Icon(
                 Icons.account_balance,
                 size: 16,
-                color: themeProvider.textSecondary,
+                color: Colors.grey[400],
               ),
               const SizedBox(width: 8),
               Text(
                 'RBI Regulated',
                 style: TextStyle(
                   fontSize: 12,
-                  color: themeProvider.textSecondary,
+                  color: Colors.grey[400],
                 ),
               ),
             ],
@@ -935,7 +902,7 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
-              color: themeProvider.textSecondary.withOpacity(0.7),
+              color: Colors.grey[500],
               height: 1.4,
             ),
           ),

@@ -1,4 +1,4 @@
-package com.superloan.app
+package com.aryatechloanguru.app
 
 import io.flutter.embedding.android.FlutterActivity
 

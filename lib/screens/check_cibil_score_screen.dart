@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lottie/lottie.dart';
 import 'cibil_loading_screen.dart';
 
 class CheckCibilScreen extends StatefulWidget {
@@ -65,18 +64,18 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: const Color(0xFF0A0E1A), // Black-based background
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8F9FB),
+        backgroundColor: const Color(0xFF0A0E1A),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Check CIBIL Score',
+          'Check Credit Score',
           style: GoogleFonts.inter(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -90,15 +89,34 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoBanner(),
-              const SizedBox(height: 24),
+              // Heading section
+              Text(
+                'Get your report',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Enter your details as per PAN card to fetch your latest credit score securely.',
+                style: GoogleFonts.inter(
+                  color: Colors.grey[400],
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
               _buildFormFields(),
               const SizedBox(height: 24),
-              _buildTermsCard(),
-              const SizedBox(height: 24),
+              _buildInfoPoints(),
+              const SizedBox(height: 32),
               _buildSubmitButton(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
               _buildSecureBadge(),
+              const SizedBox(height: 16),
+              _buildTermsText(),
               const SizedBox(height: 40),
             ],
           ),
@@ -107,85 +125,65 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     );
   }
 
-  Widget _buildInfoBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+  Widget _buildInfoPoints() {
+    return Column(
+      children: [
+        _buildInfoPoint(
+          '100% Free & Secure Check',
+          'We protect your data with bank-grade security.',
+        ),
+        const SizedBox(height: 16),
+        _buildInfoPoint(
+          'No impact on credit score',
+          'Checking your own score is a soft inquiry.',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoPoint(String title, String subtitle) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: const BoxDecoration(
+            color: Color(0xFF10B981), // Green
+            shape: BoxShape.circle,
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 100% Secure Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3E8FF),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.verified_user_rounded, size: 14, color: Color(0xFF8B5CF6)),
-                      const SizedBox(width: 4),
-                      Text(
-                        '100% Secure',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF8B5CF6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Free Credit Report',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Get detailed insights with no impact on your score.',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
+          child: const Icon(
+            Icons.check,
+            color: Colors.white,
+            size: 16,
           ),
-          const SizedBox(width: 16),
-          // Lottie Animation instead of static circle
-          SizedBox(
-            width: 100,
-            height: 100,
-            child: Lottie.asset(
-              'assets/CreditLottie.json',
-              fit: BoxFit.contain,
-              repeat: true,
-              animate: true,
-            ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: GoogleFonts.inter(
+                  color: Colors.grey[400],
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -194,30 +192,24 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
       children: [
         _buildCustomTextField(
           controller: _nameController,
-          label: 'Full Name (as per PAN)',
-          hint: 'Enter your full name',
+          label: 'FULL NAME (AS PER PAN)',
+          hint: 'e.g. Rahul Sharma',
           icon: Icons.person_outline_rounded,
         ),
-        const SizedBox(height: 16),
-        _buildCustomTextField(
-          controller: _phoneController,
-          label: 'Mobile Number',
-          hint: '+91 98765 43210',
-          icon: Icons.phone_android_rounded,
-          keyboardType: TextInputType.phone,
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
+        _buildPhoneField(),
+        const SizedBox(height: 20),
         _buildCustomTextField(
           controller: _panController,
-          label: 'PAN Number',
+          label: 'PAN NUMBER',
           hint: 'ABCDE1234F',
           icon: Icons.badge_outlined,
           textCapitalization: TextCapitalization.characters,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         _buildCustomTextField(
           controller: _dobController,
-          label: 'Date of Birth',
+          label: 'DATE OF BIRTH',
           hint: 'DD/MM/YYYY',
           icon: Icons.calendar_today_rounded,
           readOnly: true,
@@ -237,120 +229,131 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     TextInputType? keyboardType,
     TextCapitalization textCapitalization = TextCapitalization.none,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: GoogleFonts.inter(
+            color: Colors.grey[400],
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        readOnly: readOnly,
-        onTap: onTap,
-        keyboardType: keyboardType,
-        textCapitalization: textCapitalization,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: GoogleFonts.inter(color: Colors.grey[600], fontSize: 14),
-          hintText: hint,
-          hintStyle: GoogleFonts.inter(color: Colors.grey[400], fontSize: 14),
-          prefixIcon: Icon(icon, color: const Color(0xFF8B5CF6), size: 20),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
-      ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1F2E), // Dark card background
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey[800]!,
+              width: 1,
+            ),
+          ),
+          child: TextFormField(
+            controller: controller,
+            readOnly: readOnly,
+            onTap: onTap,
+            keyboardType: keyboardType,
+            textCapitalization: textCapitalization,
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 15,
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: GoogleFonts.inter(color: Colors.grey[600], fontSize: 15),
+              suffixIcon: readOnly
+                  ? Icon(icon, color: Colors.grey[600], size: 20)
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: const Color(0xFF1A1F2E),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildTermsCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  Widget _buildPhoneField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'MOBILE NUMBER',
+          style: GoogleFonts.inter(
+            color: Colors.grey[400],
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: 24,
-            width: 24,
-            child: Checkbox(
-              value: _agreedToTerms,
-              activeColor: const Color(0xFF8B5CF6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-              onChanged: (value) {
-                setState(() {
-                  _agreedToTerms = value ?? false;
-                });
-              },
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1F2E),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey[800]!,
+              width: 1,
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600], height: 1.5),
-                    children: [
-                      const TextSpan(text: 'I hereby appoint Super Loan as my authorized representative to receive my credit information from CIBIL. '),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {},
-                      child: Text(
-                        'Terms & Conditions',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF8B5CF6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    GestureDetector(
-                      onTap: () {},
-                      child: Text(
-                        'Privacy Policy',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF8B5CF6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          child: TextFormField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 15,
+            ),
+            decoration: InputDecoration(
+              prefixText: '+91 ',
+              prefixStyle: GoogleFonts.inter(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+              hintText: '98765 43210',
+              hintStyle: GoogleFonts.inter(color: Colors.grey[600], fontSize: 15),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: const Color(0xFF1A1F2E),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTermsText() {
+    return Center(
+      child: Text.rich(
+        TextSpan(
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: Colors.grey[500],
+          ),
+          children: [
+            const TextSpan(text: 'By clicking, you agree to our '),
+            TextSpan(
+              text: 'Terms & Privacy Policy',
+              style: GoogleFonts.inter(
+                color: const Color(0xFF3B82F6), // Blue
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -359,13 +362,11 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-        ),
+        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFF3B82F6), // Blue button
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF8B5CF6).withOpacity(0.3),
+            color: const Color(0xFF3B82F6).withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -373,7 +374,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
       ),
       child: ElevatedButton(
         onPressed: () {
-          if (_formKey.currentState!.validate() && _agreedToTerms) {
+          if (_formKey.currentState!.validate()) {
              Navigator.push(
                context,
                MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
@@ -383,16 +384,16 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 18),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              'Check CIBIL Score',
+              'Get My CIBIL Score',
               style: GoogleFonts.inter(
                 color: Colors.white,
                 fontSize: 16,
@@ -411,7 +412,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.lock_outline_rounded, size: 16, color: Color(0xFF8B5CF6)),
+        Icon(Icons.lock_outline_rounded, size: 16, color: Colors.grey[500]),
         const SizedBox(width: 8),
         Text(
           '256-BIT SECURE ENCRYPTION',
