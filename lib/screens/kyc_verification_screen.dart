@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'bank_details_screen.dart';
 
 class KycVerificationScreen extends StatefulWidget {
@@ -14,11 +15,175 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   final _panController = TextEditingController();
   final _addressController = TextEditingController();
 
+  // Rewarded Ad
+  RewardedAd? _rewardedAd;
+  bool _isRewardedAdLoaded = false;
+  bool _isLoadingAd = false;
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    // Wait a bit for MobileAds to be fully initialized
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _loadRewardedAd();
+      }
+    });
+  }
+
+  void _loadRewardedAd() {
+    if (!mounted) return;
+    
+    // Dispose previous ad if exists
+    _rewardedAd?.dispose();
+    _rewardedAd = null;
+    _isRewardedAdLoaded = false;
+
+    RewardedAd.load(
+      adUnitId: 'ca-app-pub-3422720384917984/3571741310',
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (RewardedAd ad) {
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+          
+          setState(() {
+            _rewardedAd = ad;
+            _isRewardedAdLoaded = true;
+            _retryCount = 0; // Reset retry count on success
+          });
+          
+          // Set up ad event callbacks
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (RewardedAd ad) {
+              ad.dispose();
+              _navigateToBankDetails();
+              // Load next ad after a delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _loadRewardedAd();
+                }
+              });
+            },
+            onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+              print('Rewarded ad failed to show: $error');
+              ad.dispose();
+              _navigateToBankDetails();
+              // Load next ad after a delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _loadRewardedAd();
+                }
+              });
+            },
+          );
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print('Rewarded ad failed to load: $error');
+          if (!mounted) return;
+          
+          setState(() {
+            _isRewardedAdLoaded = false;
+            _rewardedAd = null;
+          });
+          
+          // Retry loading if we haven't exceeded max retries
+          if (_retryCount < _maxRetries) {
+            _retryCount++;
+            print('Retrying rewarded ad load (attempt $_retryCount/$_maxRetries)...');
+            Future.delayed(Duration(seconds: _retryCount * 2), () {
+              if (mounted) {
+                _loadRewardedAd();
+              }
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _navigateToBankDetails() {
+    if (mounted) {
+      setState(() {
+        _isLoadingAd = false;
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const BankDetailsScreen(),
+        ),
+      );
+    }
+  }
+
+  void _handleContinue() {
+    if (_isLoadingAd) return; // Prevent multiple clicks
+
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    if (_isRewardedAdLoaded && _rewardedAd != null) {
+      // Ad is ready, show it
+      try {
+        _rewardedAd!.show(
+          onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+            // User earned reward
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+        // Reset loading state as ad is showing
+        setState(() {
+          _isLoadingAd = false;
+        });
+      } catch (e) {
+        print('Error showing rewarded ad: $e');
+        // If showing fails, navigate directly
+        _navigateToBankDetails();
+        // Try to load ad for next time
+        _loadRewardedAd();
+      }
+    } else {
+      // Ad is not loaded, try loading once more, then navigate
+      if (_retryCount < _maxRetries) {
+        _loadRewardedAd();
+        // Wait a bit for ad to load
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && _isRewardedAdLoaded && _rewardedAd != null) {
+            try {
+              _rewardedAd!.show(
+                onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+                  print('User earned reward: ${reward.amount} ${reward.type}');
+                },
+              );
+              setState(() {
+                _isLoadingAd = false;
+              });
+            } catch (e) {
+              _navigateToBankDetails();
+            }
+          } else {
+            // Still not loaded, navigate directly
+            _navigateToBankDetails();
+          }
+        });
+      } else {
+        // Already tried, navigate directly
+        _navigateToBankDetails();
+      }
+    }
+  }
+
   @override
   void dispose() {
     _aadhaarController.dispose();
     _panController.dispose();
     _addressController.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
   }
 
@@ -179,30 +344,47 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                     Navigator.push(
-                       context,
-                       MaterialPageRoute(
-                         builder: (context) => const BankDetailsScreen(),
-                       ),
-                     );
-                  },
+                  onPressed: _isLoadingAd ? null : _handleContinue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7BFA), // Blue button
+                    disabledBackgroundColor: const Color(0xFF2E7BFA).withOpacity(0.6),
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Continue',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: _isLoadingAd
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Loading...',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          'Continue',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ),

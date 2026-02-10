@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/loan_api_service.dart';
 import '../providers/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -37,6 +38,14 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
   bool _isApplyNowActive = false;
   bool _isCheckingApplyNow = true;
 
+  // Interstitial Ad
+  InterstitialAd? _interstitialAd;
+  bool _isAdLoaded = false;
+  bool _isLoadingAd = false;
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+  LoanApiData? _pendingLoan;
+
   @override
   void initState() {
     super.initState();
@@ -48,10 +57,160 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
     _loadCategories();
     // Check Apply Now status
     _checkApplyNowStatus();
+    // Wait a bit for MobileAds to be fully initialized
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _loadInterstitialAd();
+      }
+    });
+  }
+
+  void _loadInterstitialAd() {
+    if (!mounted) return;
+    
+    // Dispose previous ad if exists
+    _interstitialAd?.dispose();
+    _interstitialAd = null;
+    _isAdLoaded = false;
+
+    InterstitialAd.load(
+      adUnitId: 'ca-app-pub-3422720384917984/4884822987',
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+          
+          setState(() {
+            _interstitialAd = ad;
+            _isAdLoaded = true;
+            _retryCount = 0; // Reset retry count on success
+          });
+          
+          // Set up ad event callbacks
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (InterstitialAd ad) {
+              ad.dispose();
+              _navigateToLoanDetails();
+              // Load next ad after a delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _loadInterstitialAd();
+                }
+              });
+            },
+            onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+              print('Interstitial ad failed to show: $error');
+              ad.dispose();
+              _navigateToLoanDetails();
+              // Load next ad after a delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _loadInterstitialAd();
+                }
+              });
+            },
+          );
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print('Interstitial ad failed to load: $error');
+          if (!mounted) return;
+          
+          setState(() {
+            _isAdLoaded = false;
+            _interstitialAd = null;
+          });
+          
+          // Retry loading if we haven't exceeded max retries
+          if (_retryCount < _maxRetries) {
+            _retryCount++;
+            print('Retrying interstitial ad load (attempt $_retryCount/$_maxRetries)...');
+            Future.delayed(Duration(seconds: _retryCount * 2), () {
+              if (mounted) {
+                _loadInterstitialAd();
+              }
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _navigateToLoanDetails() {
+    if (mounted && _pendingLoan != null) {
+      // Store loan locally to avoid null issues
+      final loan = _pendingLoan!;
+      _pendingLoan = null;
+      
+      setState(() {
+        _isLoadingAd = false;
+      });
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoanDetailsScreen(loan: loan),
+        ),
+      );
+    }
+  }
+
+  void _handleProceed(LoanApiData loan) {
+    if (_isLoadingAd) return; // Prevent multiple clicks
+
+    // Store loan for navigation after ad
+    _pendingLoan = loan;
+
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    if (_isAdLoaded && _interstitialAd != null) {
+      // Ad is ready, show it
+      try {
+        _interstitialAd!.show();
+        setState(() {
+          _isLoadingAd = false;
+        });
+      } catch (e) {
+        print('Error showing interstitial ad: $e');
+        // If showing fails, navigate directly
+        _navigateToLoanDetails();
+        // Try to load ad for next time
+        _loadInterstitialAd();
+      }
+    } else {
+      // Ad is not loaded, try loading once more, then navigate
+      if (_retryCount < _maxRetries) {
+        _loadInterstitialAd();
+        // Wait a bit for ad to load
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && _isAdLoaded && _interstitialAd != null) {
+            try {
+              _interstitialAd!.show();
+              setState(() {
+                _isLoadingAd = false;
+              });
+            } catch (e) {
+              _navigateToLoanDetails();
+            }
+          } else {
+            // Still not loaded, navigate directly
+            _navigateToLoanDetails();
+          }
+        });
+      } else {
+        // Already tried, navigate directly
+        _navigateToLoanDetails();
+      }
+    }
   }
 
   @override
   void dispose() {
+    _interstitialAd?.dispose();
     super.dispose();
   }
 
@@ -267,15 +426,7 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
     }
     
     return InkWell(
-      onTap: () {
-        // Navigate directly to loan details (ads disabled)
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LoanDetailsScreen(loan: loan),
-          ),
-        );
-      },
+      onTap: () => _handleProceed(loan),
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(18),
@@ -491,38 +642,53 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Navigate directly to loan details (ads commented out)
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => LoanDetailsScreen(loan: loan),
-                    ),
-                  );
-                },
+                onPressed: _isLoadingAd ? null : () => _handleProceed(loan),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A5F),
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: const Color(0xFF1E3A5F).withOpacity(0.6),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                   elevation: 0,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Proceed', 
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                child: _isLoadingAd
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'Loading...',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Proceed', 
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward, size: 18),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward, size: 18),
-                  ],
-                ),
               ),
             ),
           ],

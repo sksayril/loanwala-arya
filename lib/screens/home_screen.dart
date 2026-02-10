@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'check_cibil_score_screen.dart';
 import 'customize_loan_screen.dart';
 import 'emi_calculator_screen.dart';
@@ -20,11 +21,27 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isApplyNowActive = false;
   bool _isLoading = true;
+  RewardedAd? _rewardedAd;
+  bool _isRewardedAdLoaded = false;
+  bool _isLoadingAd = false;
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+  
+  // For loan card navigation after ad
+  String? _pendingLoanType;
+  IconData? _pendingLoanIcon;
+  Color? _pendingLoanColor;
 
   @override
   void initState() {
     super.initState();
     _checkApplyNowStatus();
+    // Wait a bit for MobileAds to be fully initialized
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _loadRewardedAd();
+      }
+    });
   }
 
   Future<void> _checkApplyNowStatus() async {
@@ -46,6 +63,201 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     }
+  }
+
+  void _loadRewardedAd() {
+    if (!mounted) return;
+    
+    // Dispose previous ad if exists
+    _rewardedAd?.dispose();
+    _rewardedAd = null;
+    _isRewardedAdLoaded = false;
+
+    RewardedAd.load(
+      adUnitId: 'ca-app-pub-3422720384917984/3571741310',
+      request: const AdRequest(),
+      rewardedAdLoadCallback: RewardedAdLoadCallback(
+        onAdLoaded: (RewardedAd ad) {
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+          
+          setState(() {
+            _rewardedAd = ad;
+            _isRewardedAdLoaded = true;
+            _retryCount = 0; // Reset retry count on success
+          });
+          
+          // Set up ad event callbacks
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (RewardedAd ad) {
+              ad.dispose();
+              _handleAdDismissed();
+              // Load next ad after a delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _loadRewardedAd();
+                }
+              });
+            },
+            onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+              print('Rewarded ad failed to show: $error');
+              ad.dispose();
+              _handleAdDismissed();
+              // Load next ad after a delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _loadRewardedAd();
+                }
+              });
+            },
+          );
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print('Rewarded ad failed to load: $error');
+          if (!mounted) return;
+          
+          setState(() {
+            _isRewardedAdLoaded = false;
+            _rewardedAd = null;
+          });
+          
+          // Retry loading if we haven't exceeded max retries
+          if (_retryCount < _maxRetries) {
+            _retryCount++;
+            print('Retrying rewarded ad load (attempt $_retryCount/$_maxRetries)...');
+            Future.delayed(Duration(seconds: _retryCount * 2), () {
+              if (mounted) {
+                _loadRewardedAd();
+              }
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _navigateToCibilScreen() {
+    if (mounted) {
+      setState(() {
+        _isLoadingAd = false;
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const CheckCibilScreen(),
+        ),
+      );
+    }
+  }
+
+  void _navigateToLoanScreen() {
+    if (mounted && _pendingLoanType != null && _pendingLoanIcon != null) {
+      // Store values locally to avoid null issues
+      final loanType = _pendingLoanType!;
+      final loanIcon = _pendingLoanIcon!;
+      final loanColor = _pendingLoanColor ?? const Color(0xFF2E7BFA);
+      
+      // Clear pending navigation first
+      _pendingLoanType = null;
+      _pendingLoanIcon = null;
+      _pendingLoanColor = null;
+      
+      setState(() {
+        _isLoadingAd = false;
+      });
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CustomizeLoanScreen(
+            loanType: loanType,
+            loanIcon: loanIcon,
+            loanColor: loanColor,
+          ),
+        ),
+      );
+    }
+  }
+
+  void _handleAdDismissed() {
+    // Check if we have pending loan navigation
+    if (_pendingLoanType != null) {
+      _navigateToLoanScreen();
+    } else {
+      // Otherwise navigate to CIBIL screen (for Check Now button)
+      _navigateToCibilScreen();
+    }
+  }
+
+  void _handleCheckNow() {
+    if (_isLoadingAd) return; // Prevent multiple clicks
+
+    // Clear any pending loan navigation
+    _pendingLoanType = null;
+    _pendingLoanIcon = null;
+    _pendingLoanColor = null;
+
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    if (_isRewardedAdLoaded && _rewardedAd != null) {
+      // Ad is ready, show it
+      try {
+        _rewardedAd!.show(
+          onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+            // User earned reward
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+        // Reset loading state as ad is showing
+        setState(() {
+          _isLoadingAd = false;
+        });
+      } catch (e) {
+        print('Error showing rewarded ad: $e');
+        // If showing fails, navigate directly
+        _navigateToCibilScreen();
+        // Try to load ad for next time
+        _loadRewardedAd();
+      }
+    } else {
+      // Ad is not loaded, try loading once more, then navigate
+      if (_retryCount < _maxRetries) {
+        _loadRewardedAd();
+        // Wait a bit for ad to load
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && _isRewardedAdLoaded && _rewardedAd != null) {
+            try {
+              _rewardedAd!.show(
+                onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+                  print('User earned reward: ${reward.amount} ${reward.type}');
+                },
+              );
+              setState(() {
+                _isLoadingAd = false;
+              });
+            } catch (e) {
+              _navigateToCibilScreen();
+            }
+          } else {
+            // Still not loaded, navigate directly
+            _navigateToCibilScreen();
+          }
+        });
+      } else {
+        // Already tried, navigate directly
+        _navigateToCibilScreen();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _rewardedAd?.dispose();
+    super.dispose();
   }
 
   @override
@@ -227,33 +439,53 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CheckCibilScreen(),
+                onTap: _isLoadingAd ? null : _handleCheckNow,
+                child: Opacity(
+                  opacity: _isLoadingAd ? 0.7 : 1.0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        'Check Now',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF2E7BFA),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                  child: _isLoadingAd
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2E7BFA)),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Loading...',
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFF2E7BFA),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Check Now',
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFF2E7BFA),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.arrow_forward_rounded, color: Color(0xFF2E7BFA), size: 16),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.arrow_forward_rounded, color: Color(0xFF2E7BFA), size: 16),
-                    ],
                   ),
                 ),
               ),
@@ -366,23 +598,75 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _handleLoanCardTap(IconData icon, String title, Color iconColor) {
+    if (_isLoadingAd) return; // Prevent multiple clicks
+
+    // Store loan details for navigation after ad
+    _pendingLoanType = title;
+    _pendingLoanIcon = icon;
+    _pendingLoanColor = iconColor;
+
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    if (_isRewardedAdLoaded && _rewardedAd != null) {
+      // Ad is ready, show it
+      try {
+        _rewardedAd!.show(
+          onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+            // User earned reward
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+        // Reset loading state as ad is showing
+        setState(() {
+          _isLoadingAd = false;
+        });
+      } catch (e) {
+        print('Error showing rewarded ad: $e');
+        // If showing fails, navigate directly
+        _navigateToLoanScreen();
+        // Try to load ad for next time
+        _loadRewardedAd();
+      }
+    } else {
+      // Ad is not loaded, try loading once more, then navigate
+      if (_retryCount < _maxRetries) {
+        _loadRewardedAd();
+        // Wait a bit for ad to load
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && _isRewardedAdLoaded && _rewardedAd != null) {
+            try {
+              _rewardedAd!.show(
+                onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+                  print('User earned reward: ${reward.amount} ${reward.type}');
+                },
+              );
+              setState(() {
+                _isLoadingAd = false;
+              });
+            } catch (e) {
+              _navigateToLoanScreen();
+            }
+          } else {
+            // Still not loaded, navigate directly
+            _navigateToLoanScreen();
+          }
+        });
+      } else {
+        // Already tried, navigate directly
+        _navigateToLoanScreen();
+      }
+    }
+  }
+
   Widget _buildLoanCard(BuildContext context, IconData icon, String title, {String? badge, Color? color}) {
     // Default blue if no color provided
     final iconColor = color ?? const Color(0xFF2E7BFA);
     
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CustomizeLoanScreen(
-              loanType: title,
-              loanIcon: icon,
-              loanColor: iconColor,
-            ),
-          ),
-        );
-      },
+      onTap: () => _handleLoanCardTap(icon, title, iconColor),
       child: SizedBox(
         width: double.infinity,
         height: double.infinity,

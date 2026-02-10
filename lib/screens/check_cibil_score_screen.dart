@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'cibil_loading_screen.dart';
 
 class CheckCibilScreen extends StatefulWidget {
@@ -19,6 +20,166 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   final TextEditingController _dobController = TextEditingController();
 
   bool _agreedToTerms = false;
+  
+  // Interstitial Ad
+  InterstitialAd? _interstitialAd;
+  bool _isAdLoaded = false;
+  bool _isLoadingAd = false;
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+
+  @override
+  void initState() {
+    super.initState();
+    // Wait a bit for MobileAds to be fully initialized
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _loadInterstitialAd();
+      }
+    });
+  }
+
+  void _loadInterstitialAd() {
+    if (!mounted) return;
+    
+    // Dispose previous ad if exists
+    _interstitialAd?.dispose();
+    _interstitialAd = null;
+    _isAdLoaded = false;
+
+    InterstitialAd.load(
+      adUnitId: 'ca-app-pub-3422720384917984/4884822987',
+      request: const AdRequest(),
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (InterstitialAd ad) {
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+          
+          setState(() {
+            _interstitialAd = ad;
+            _isAdLoaded = true;
+            _retryCount = 0; // Reset retry count on success
+          });
+          
+          // Set up ad event callbacks
+          ad.fullScreenContentCallback = FullScreenContentCallback(
+            onAdDismissedFullScreenContent: (InterstitialAd ad) {
+              ad.dispose();
+              _navigateToLoadingScreen();
+              // Load next ad after a delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _loadInterstitialAd();
+                }
+              });
+            },
+            onAdFailedToShowFullScreenContent: (InterstitialAd ad, AdError error) {
+              print('Interstitial ad failed to show: $error');
+              ad.dispose();
+              _navigateToLoadingScreen();
+              // Load next ad after a delay
+              Future.delayed(const Duration(milliseconds: 500), () {
+                if (mounted) {
+                  _loadInterstitialAd();
+                }
+              });
+            },
+          );
+        },
+        onAdFailedToLoad: (LoadAdError error) {
+          print('Interstitial ad failed to load: $error');
+          if (!mounted) return;
+          
+          setState(() {
+            _isAdLoaded = false;
+            _interstitialAd = null;
+          });
+          
+          // Retry loading if we haven't exceeded max retries
+          if (_retryCount < _maxRetries) {
+            _retryCount++;
+            print('Retrying interstitial ad load (attempt $_retryCount/$_maxRetries)...');
+            Future.delayed(Duration(seconds: _retryCount * 2), () {
+              if (mounted) {
+                _loadInterstitialAd();
+              }
+            });
+          }
+        },
+      ),
+    );
+  }
+
+  void _navigateToLoadingScreen() {
+    if (mounted) {
+      setState(() {
+        _isLoadingAd = false;
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+      );
+    }
+  }
+
+  void _handleSubmit() {
+    if (!_formKey.currentState!.validate() || !_agreedToTerms) {
+      if (!_agreedToTerms) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please agree to the Terms & Conditions')),
+        );
+      }
+      return;
+    }
+
+    if (_isLoadingAd) return; // Prevent multiple clicks
+
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    if (_isAdLoaded && _interstitialAd != null) {
+      // Ad is ready, show it
+      try {
+        _interstitialAd!.show();
+        setState(() {
+          _isLoadingAd = false;
+        });
+      } catch (e) {
+        print('Error showing interstitial ad: $e');
+        // If showing fails, navigate directly
+        _navigateToLoadingScreen();
+        // Try to load ad for next time
+        _loadInterstitialAd();
+      }
+    } else {
+      // Ad is not loaded, try loading once more, then navigate
+      if (_retryCount < _maxRetries) {
+        _loadInterstitialAd();
+        // Wait a bit for ad to load
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && _isAdLoaded && _interstitialAd != null) {
+            try {
+              _interstitialAd!.show();
+              setState(() {
+                _isLoadingAd = false;
+              });
+            } catch (e) {
+              _navigateToLoadingScreen();
+            }
+          } else {
+            // Still not loaded, navigate directly
+            _navigateToLoadingScreen();
+          }
+        });
+      } else {
+        // Already tried, navigate directly
+        _navigateToLoadingScreen();
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -26,6 +187,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     _phoneController.dispose();
     _panController.dispose();
     _dobController.dispose();
+    _interstitialAd?.dispose();
     super.dispose();
   }
 
@@ -350,18 +512,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState!.validate() && _agreedToTerms) {
-             Navigator.push(
-               context,
-               MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-             );
-          } else if (!_agreedToTerms) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please agree to the Terms & Conditions')),
-            );
-          }
-        },
+        onPressed: _isLoadingAd ? null : _handleSubmit,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF2E7BFA),
           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -369,22 +520,46 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 0,
+          disabledBackgroundColor: const Color(0xFF2E7BFA).withOpacity(0.6),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Check CIBIL Score',
-              style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+        child: _isLoadingAd
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Loading...',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Check CIBIL Score',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                ],
               ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-          ],
-        ),
       ),
     );
   }

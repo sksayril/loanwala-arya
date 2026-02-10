@@ -1,10 +1,22 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'screens/splash_screen.dart';
 import 'providers/theme_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize MobileAds with error handling
+  try {
+    await MobileAds.instance.initialize();
+    print('MobileAds initialized successfully');
+  } catch (e) {
+    print('Error initializing MobileAds: $e');
+    // Continue app launch even if ads fail to initialize
+  }
+  
   runApp(const MyApp());
 }
 
