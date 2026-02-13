@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'check_cibil_score_screen.dart';
 import 'customize_loan_screen.dart';
 import 'emi_calculator_screen.dart';
@@ -8,6 +9,7 @@ import 'sip_calculator_screen.dart';
 import 'vat_calculator_screen.dart';
 import 'house_rent_calculator_screen.dart';
 import '../services/loan_api_service.dart';
+import '../services/ad_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -150,15 +152,92 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCibilScoreCard(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
+  Future<void> _showRewardedAdAndNavigate(BuildContext context) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Load the rewarded ad
+      final rewardedAd = await AdHelper.loadRewardedAd();
+      
+      if (!mounted) return;
+      
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      if (rewardedAd != null) {
+        // Show the rewarded ad
+        rewardedAd.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) {
+            ad.dispose();
+            // Navigate to CheckCibilScreen after ad is dismissed
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CheckCibilScreen(),
+                ),
+              );
+            }
+          },
+          onAdFailedToShowFullScreenContent: (ad, error) {
+            print('Failed to show rewarded ad: $error');
+            ad.dispose();
+            // Navigate even if ad fails to show
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CheckCibilScreen(),
+                ),
+              );
+            }
+          },
+        );
+
+        // Show the ad
+        await rewardedAd.show(
+          onUserEarnedReward: (ad, reward) {
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+      } else {
+        // If ad failed to load, navigate directly
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CheckCibilScreen(),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error showing rewarded ad: $e');
+      // Dismiss loading indicator if still showing
+      if (mounted) {
+        Navigator.of(context).pop();
+        // Navigate even if there's an error
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => const CheckCibilScreen(),
           ),
         );
+      }
+    }
+  }
+
+  Widget _buildCibilScoreCard(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        _showRewardedAdAndNavigate(context);
       },
       child: Container(
         width: double.infinity,

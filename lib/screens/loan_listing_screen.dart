@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/loan_api_service.dart';
+import '../services/ad_helper.dart';
 import '../providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import '../widgets/skeleton_loader.dart';
@@ -189,6 +191,88 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
           SnackBar(
             content: Text('Error opening link: ${e.toString()}'),
             backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showRewardedAdAndNavigate(BuildContext context, LoanApiData loan) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Load the rewarded ad
+      final rewardedAd = await AdHelper.loadRewardedAd();
+      
+      if (!mounted) return;
+      
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      if (rewardedAd != null) {
+        // Show the rewarded ad
+        rewardedAd.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) {
+            ad.dispose();
+            // Navigate to LoanDetailsScreen after ad is dismissed
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LoanDetailsScreen(loan: loan),
+                ),
+              );
+            }
+          },
+          onAdFailedToShowFullScreenContent: (ad, error) {
+            print('Failed to show rewarded ad: $error');
+            ad.dispose();
+            // Navigate even if ad fails to show
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LoanDetailsScreen(loan: loan),
+                ),
+              );
+            }
+          },
+        );
+
+        // Show the ad
+        await rewardedAd.show(
+          onUserEarnedReward: (ad, reward) {
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+      } else {
+        // If ad failed to load, navigate directly
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoanDetailsScreen(loan: loan),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error showing rewarded ad: $e');
+      // Dismiss loading indicator if still showing
+      if (mounted) {
+        Navigator.of(context).pop();
+        // Navigate even if there's an error
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LoanDetailsScreen(loan: loan),
           ),
         );
       }
@@ -486,12 +570,7 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => LoanDetailsScreen(loan: loan),
-                  ),
-                );
+                _showRewardedAdAndNavigate(context, loan);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1A2E4E),

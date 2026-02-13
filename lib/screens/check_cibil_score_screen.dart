@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'cibil_loading_screen.dart';
+import '../services/ad_helper.dart';
 
 class CheckCibilScreen extends StatefulWidget {
   const CheckCibilScreen({super.key});
@@ -58,6 +60,88 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
          // Format: DD/MM/YYYY
         _dobController.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
+    }
+  }
+
+  Future<void> _showRewardedAdAndNavigate(BuildContext context) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Load the rewarded ad
+      final rewardedAd = await AdHelper.loadRewardedAd();
+      
+      if (!mounted) return;
+      
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      if (rewardedAd != null) {
+        // Show the rewarded ad
+        rewardedAd.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) {
+            ad.dispose();
+            // Navigate to CibilLoadingScreen after ad is dismissed
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CibilLoadingScreen(),
+                ),
+              );
+            }
+          },
+          onAdFailedToShowFullScreenContent: (ad, error) {
+            print('Failed to show rewarded ad: $error');
+            ad.dispose();
+            // Navigate even if ad fails to show
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CibilLoadingScreen(),
+                ),
+              );
+            }
+          },
+        );
+
+        // Show the ad
+        await rewardedAd.show(
+          onUserEarnedReward: (ad, reward) {
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+      } else {
+        // If ad failed to load, navigate directly
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CibilLoadingScreen(),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error showing rewarded ad: $e');
+      // Dismiss loading indicator if still showing
+      if (mounted) {
+        Navigator.of(context).pop();
+        // Navigate even if there's an error
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const CibilLoadingScreen(),
+          ),
+        );
+      }
     }
   }
 
@@ -375,10 +459,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
       child: ElevatedButton(
         onPressed: () {
           if (_formKey.currentState!.validate()) {
-             Navigator.push(
-               context,
-               MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-             );
+            _showRewardedAdAndNavigate(context);
           }
         },
         style: ElevatedButton.styleFrom(

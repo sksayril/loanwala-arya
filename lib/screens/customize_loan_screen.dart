@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:math';
 import 'personal_details_screen.dart';
+import '../services/ad_helper.dart';
 
 class CustomizeLoanScreen extends StatefulWidget {
   final String loanType;
@@ -33,6 +35,104 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
     double emi = (_loanAmount * monthlyRate * pow(1 + monthlyRate, _selectedTenure)) /
         (pow(1 + monthlyRate, _selectedTenure) - 1);
     return emi;
+  }
+
+  Future<void> _showRewardedAdAndNavigate(BuildContext context) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // Load the rewarded ad
+      final rewardedAd = await AdHelper.loadRewardedAd();
+      
+      if (!mounted) return;
+      
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      if (rewardedAd != null) {
+        // Show the rewarded ad
+        rewardedAd.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) {
+            ad.dispose();
+            // Navigate to PersonalDetailsScreen after ad is dismissed
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PersonalDetailsScreen(
+                    loanAmount: _loanAmount,
+                    tenure: _selectedTenure,
+                    loanType: widget.loanType,
+                  ),
+                ),
+              );
+            }
+          },
+          onAdFailedToShowFullScreenContent: (ad, error) {
+            print('Failed to show rewarded ad: $error');
+            ad.dispose();
+            // Navigate even if ad fails to show
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PersonalDetailsScreen(
+                    loanAmount: _loanAmount,
+                    tenure: _selectedTenure,
+                    loanType: widget.loanType,
+                  ),
+                ),
+              );
+            }
+          },
+        );
+
+        // Show the ad
+        await rewardedAd.show(
+          onUserEarnedReward: (ad, reward) {
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+      } else {
+        // If ad failed to load, navigate directly
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PersonalDetailsScreen(
+                loanAmount: _loanAmount,
+                tenure: _selectedTenure,
+                loanType: widget.loanType,
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error showing rewarded ad: $e');
+      // Dismiss loading indicator if still showing
+      if (mounted) {
+        Navigator.of(context).pop();
+        // Navigate even if there's an error
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PersonalDetailsScreen(
+              loanAmount: _loanAmount,
+              tenure: _selectedTenure,
+              loanType: widget.loanType,
+            ),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -290,16 +390,7 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PersonalDetailsScreen(
-                        loanAmount: _loanAmount,
-                        tenure: _selectedTenure,
-                        loanType: widget.loanType,
-                      ),
-                    ),
-                  );
+                  _showRewardedAdAndNavigate(context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3B82F6), // Blue
