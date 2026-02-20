@@ -10,6 +10,7 @@ import 'income_tax_calculator_screen.dart';
 import 'vat_calculator_screen.dart';
 import 'house_rent_calculator_screen.dart';
 import '../services/loan_api_service.dart';
+import '../services/ad_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isApplyNowActive = false;
   bool _isLoading = true;
+  bool _isLoadingAd = false;
 
   @override
   void initState() {
@@ -46,6 +48,61 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _handleCheckCibilScore() async {
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    // Show rewarded ad before navigating to CIBIL screen
+    final bool adShown = await AdHelper.showRewardedAd(
+      onAdDismissed: () {
+        // Navigate to CIBIL screen after ad is dismissed
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CheckCibilScreen(),
+            ),
+          );
+        }
+      },
+      onAdFailedToShow: () {
+        // If ad fails to show, still navigate to CIBIL screen
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CheckCibilScreen(),
+            ),
+          );
+        }
+      },
+      onUserEarnedReward: () {
+        // User earned reward - can add any reward logic here
+        print('User earned reward for watching ad');
+      },
+    );
+
+    // If ad couldn't be loaded/shown, navigate directly
+    if (!adShown && mounted) {
+      setState(() {
+        _isLoadingAd = false;
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const CheckCibilScreen(),
+        ),
+      );
     }
   }
 
@@ -236,19 +293,14 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
               // Check CIBIL Score button
               GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CheckCibilScreen(),
-                    ),
-                  );
-                },
+                onTap: _isLoadingAd ? null : _handleCheckCibilScore,
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF5CCB86), // Brighter green matching image
+                    color: _isLoadingAd 
+                        ? const Color(0xFF5CCB86).withOpacity(0.6)
+                        : const Color(0xFF5CCB86), // Brighter green matching image
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -259,14 +311,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   child: Center(
-                    child: Text(
-                      'Check CIBIL Score',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
+                    child: _isLoadingAd
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            'Check CIBIL Score',
+                            style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
                   ),
                 ),
               ),

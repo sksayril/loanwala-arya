@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'bank_details_screen.dart';
+import '../services/ad_helper.dart';
 
 class KycVerificationScreen extends StatefulWidget {
   const KycVerificationScreen({super.key});
@@ -13,6 +14,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   final _aadhaarController = TextEditingController();
   final _panController = TextEditingController();
   final _addressController = TextEditingController();
+  bool _isLoadingAd = false;
 
   @override
   void dispose() {
@@ -20,6 +22,61 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
     _panController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleContinue() async {
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    // Show rewarded ad before navigating to bank details screen
+    final bool adShown = await AdHelper.showRewardedAd(
+      onAdDismissed: () {
+        // Navigate to bank details screen after ad is dismissed
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BankDetailsScreen(),
+            ),
+          );
+        }
+      },
+      onAdFailedToShow: () {
+        // If ad fails to show, still navigate to bank details screen
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BankDetailsScreen(),
+            ),
+          );
+        }
+      },
+      onUserEarnedReward: () {
+        // User earned reward - can add any reward logic here
+        print('User earned reward for watching ad');
+      },
+    );
+
+    // If ad couldn't be loaded/shown, navigate directly
+    if (!adShown && mounted) {
+      setState(() {
+        _isLoadingAd = false;
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const BankDetailsScreen(),
+        ),
+      );
+    }
   }
 
   @override
@@ -179,30 +236,33 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                     Navigator.push(
-                       context,
-                       MaterialPageRoute(
-                         builder: (context) => const BankDetailsScreen(),
-                       ),
-                     );
-                  },
+                  onPressed: _isLoadingAd ? null : _handleContinue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7BFA), // Blue button
+                    disabledBackgroundColor: Colors.grey[300],
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Continue',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: _isLoadingAd
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          'Continue',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ),

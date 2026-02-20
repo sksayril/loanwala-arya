@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
 import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 import 'personal_details_screen.dart';
+import '../services/ad_helper.dart';
 
 class CustomizeLoanScreen extends StatefulWidget {
   final String loanType;
@@ -24,6 +25,7 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
   double _loanAmount = 150000;
   int _selectedTenure = 9; // in months
   bool _agreedToTerms = true;
+  bool _isLoadingAd = false;
 
   final double _minLoan = 5000;
   final double _maxLoan = 200000;
@@ -34,6 +36,77 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
     double emi = (_loanAmount * monthlyRate * pow(1 + monthlyRate, _selectedTenure)) /
         (pow(1 + monthlyRate, _selectedTenure) - 1);
     return emi;
+  }
+
+  Future<void> _handleContinue() async {
+    if (!_agreedToTerms) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    // Show rewarded ad before navigating to personal details screen
+    final bool adShown = await AdHelper.showRewardedAd(
+      onAdDismissed: () {
+        // Navigate to personal details screen after ad is dismissed
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PersonalDetailsScreen(
+                loanAmount: _loanAmount,
+                tenure: _selectedTenure,
+                loanType: widget.loanType,
+              ),
+            ),
+          );
+        }
+      },
+      onAdFailedToShow: () {
+        // If ad fails to show, still navigate to personal details screen
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PersonalDetailsScreen(
+                loanAmount: _loanAmount,
+                tenure: _selectedTenure,
+                loanType: widget.loanType,
+              ),
+            ),
+          );
+        }
+      },
+      onUserEarnedReward: () {
+        // User earned reward - can add any reward logic here
+        print('User earned reward for watching ad');
+      },
+    );
+
+    // If ad couldn't be loaded/shown, navigate directly
+    if (!adShown && mounted) {
+      setState(() {
+        _isLoadingAd = false;
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PersonalDetailsScreen(
+            loanAmount: _loanAmount,
+            tenure: _selectedTenure,
+            loanType: widget.loanType,
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -130,13 +203,13 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
                   ),
                   const SizedBox(height: 40),
                   // Tenure Selection Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    runSpacing: 12,
                     children: [
                       _buildTenureChip(3),
-                      const SizedBox(width: 12),
                       _buildTenureChip(9),
-                      const SizedBox(width: 12),
                       _buildTenureChip(12),
                     ],
                   ),
@@ -204,20 +277,7 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _agreedToTerms
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PersonalDetailsScreen(
-                                loanAmount: _loanAmount,
-                                tenure: _selectedTenure,
-                                loanType: widget.loanType,
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
+                  onPressed: (_agreedToTerms && !_isLoadingAd) ? _handleContinue : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
                     disabledBackgroundColor: Colors.grey[300],
@@ -227,21 +287,30 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Continue',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                  child: _isLoadingAd
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Continue',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                    ],
-                  ),
                 ),
               ),
             ),
@@ -260,7 +329,7 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF8B5CF6).withOpacity(0.2) : Colors.white,
           borderRadius: BorderRadius.circular(30),

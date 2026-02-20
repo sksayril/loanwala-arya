@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'cibil_loading_screen.dart';
+import '../services/ad_helper.dart';
 
 class CheckCibilScreen extends StatefulWidget {
   const CheckCibilScreen({super.key});
@@ -20,6 +21,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   final TextEditingController _dobController = TextEditingController();
 
   bool _agreedToTerms = false;
+  bool _isLoadingAd = false;
 
   @override
   void dispose() {
@@ -355,6 +357,59 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     );
   }
 
+  Future<void> _handleCheckCibilScore() async {
+    if (!_formKey.currentState!.validate() || !_agreedToTerms) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    // Show rewarded ad before navigating to CIBIL loading screen
+    final bool adShown = await AdHelper.showRewardedAd(
+      onAdDismissed: () {
+        // Navigate to loading screen after ad is dismissed
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+          );
+        }
+      },
+      onAdFailedToShow: () {
+        // If ad fails to show, still navigate to loading screen
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+          );
+        }
+      },
+      onUserEarnedReward: () {
+        // User earned reward - can add any reward logic here
+        print('User earned reward for watching ad');
+      },
+    );
+
+    // If ad couldn't be loaded/shown, navigate directly
+    if (!adShown && mounted) {
+      setState(() {
+        _isLoadingAd = false;
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+      );
+    }
+  }
+
   Widget _buildSubmitButton() {
     return Container(
       width: double.infinity,
@@ -372,14 +427,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState!.validate() && _agreedToTerms) {
-             Navigator.push(
-               context,
-               MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-             );
-          }
-        },
+        onPressed: _isLoadingAd ? null : _handleCheckCibilScore,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
@@ -387,22 +435,32 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
+          disabledBackgroundColor: Colors.grey,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Check CIBIL Score',
-              style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+        child: _isLoadingAd
+            ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Check CIBIL Score',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                ],
               ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-          ],
-        ),
       ),
     );
   }

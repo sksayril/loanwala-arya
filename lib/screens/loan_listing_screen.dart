@@ -5,6 +5,7 @@ import '../providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import '../widgets/skeleton_loader.dart';
 import 'loan_details_screen.dart';
+import '../services/ad_helper.dart';
 
 class LoanListingScreen extends StatefulWidget {
   final String loanType;
@@ -36,6 +37,9 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
   // Apply Now button visibility
   bool _isApplyNowActive = false;
   bool _isCheckingApplyNow = true;
+  
+  // Track which loan's proceed button is loading ad (using index as key since id might be null)
+  Set<int> _loadingLoanIndices = {};
 
   @override
   void initState() {
@@ -491,38 +495,42 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  // Navigate directly to loan details (ads commented out)
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => LoanDetailsScreen(loan: loan),
-                    ),
-                  );
-                },
+                onPressed: _loadingLoanIndices.contains(index) 
+                    ? null 
+                    : () => _handleProceed(loan, index),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A5F),
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: Colors.grey[300],
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                   elevation: 0,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      'Proceed', 
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                child: _loadingLoanIndices.contains(index)
+                    ? const SizedBox(
+                        height: 18,
+                        width: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Proceed', 
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(Icons.arrow_forward, size: 18),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward, size: 18),
-                  ],
-                ),
               ),
             ),
           ],
@@ -531,6 +539,60 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
     );
   }
 
+  Future<void> _handleProceed(LoanApiData loan, int index) async {
+    setState(() {
+      _loadingLoanIndices.add(index);
+    });
+
+    // Show rewarded ad before navigating to loan details screen
+    final bool adShown = await AdHelper.showRewardedAd(
+      onAdDismissed: () {
+        // Navigate to loan details screen after ad is dismissed
+        if (mounted) {
+          setState(() {
+            _loadingLoanIndices.remove(index);
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoanDetailsScreen(loan: loan),
+            ),
+          );
+        }
+      },
+      onAdFailedToShow: () {
+        // If ad fails to show, still navigate to loan details screen
+        if (mounted) {
+          setState(() {
+            _loadingLoanIndices.remove(index);
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoanDetailsScreen(loan: loan),
+            ),
+          );
+        }
+      },
+      onUserEarnedReward: () {
+        // User earned reward - can add any reward logic here
+        print('User earned reward for watching ad');
+      },
+    );
+
+    // If ad couldn't be loaded/shown, navigate directly
+    if (!adShown && mounted) {
+      setState(() {
+        _loadingLoanIndices.remove(index);
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoanDetailsScreen(loan: loan),
+        ),
+      );
+    }
+  }
 
   Widget _buildLoanCard(LoanApiData loan) {
     final themeProvider = Provider.of<ThemeProvider>(context);

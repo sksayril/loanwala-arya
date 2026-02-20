@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'bank_verification_loader_screen.dart';
+import '../services/ad_helper.dart';
 
 class BankDetailsScreen extends StatefulWidget {
   const BankDetailsScreen({super.key});
@@ -16,6 +17,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
   final _confirmAccountController = TextEditingController();
   final _ifscController = TextEditingController();
   bool _isConfirmed = false;
+  bool _isLoadingAd = false;
 
   @override
   void dispose() {
@@ -24,6 +26,73 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
     _confirmAccountController.dispose();
     _ifscController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleVerifyBankAccount() async {
+    if (!_formKey.currentState!.validate() || !_isConfirmed) {
+      if (!_isConfirmed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please confirm the details', style: GoogleFonts.inter()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isLoadingAd = true;
+    });
+
+    // Show rewarded ad before navigating to bank verification loader screen
+    final bool adShown = await AdHelper.showRewardedAd(
+      onAdDismissed: () {
+        // Navigate to bank verification loader screen after ad is dismissed
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BankVerificationLoaderScreen(),
+            ),
+          );
+        }
+      },
+      onAdFailedToShow: () {
+        // If ad fails to show, still navigate to bank verification loader screen
+        if (mounted) {
+          setState(() {
+            _isLoadingAd = false;
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BankVerificationLoaderScreen(),
+            ),
+          );
+        }
+      },
+      onUserEarnedReward: () {
+        // User earned reward - can add any reward logic here
+        print('User earned reward for watching ad');
+      },
+    );
+
+    // If ad couldn't be loaded/shown, navigate directly
+    if (!adShown && mounted) {
+      setState(() {
+        _isLoadingAd = false;
+      });
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const BankVerificationLoaderScreen(),
+        ),
+      );
+    }
   }
 
   @override
@@ -252,41 +321,33 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate() && _isConfirmed) {
-                      // Process bank details
-                      // Navigate to loader
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BankVerificationLoaderScreen(),
-                        ),
-                      );
-                    } else if (!_isConfirmed) {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Please confirm the details', style: GoogleFonts.inter()),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: _isLoadingAd ? null : _handleVerifyBankAccount,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF7C3AED),
+                    disabledBackgroundColor: Colors.grey[300],
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Verify Bank Account',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: _isLoadingAd
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          'Verify Bank Account',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ),
