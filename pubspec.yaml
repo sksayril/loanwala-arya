@@ -112,6 +112,8 @@ flutter_launcher_icons:
   image_path: "assets/superloan.png"
   remove_alpha_ios: true
   min_sdk_android: 21 # android min sdk min:16, default 21
+  adaptive_icon_background: "#002B5B"
+  adaptive_icon_foreground: "assets/superloan.png"
   web:
     generate: true
     # image_path: "assets/easyloanlogo.png"
@@ -126,4 +128,4 @@ flutter_launcher_icons:
     image_path: "assets/superloan.png"
     # image_path: "assets/20260201_204647.png"
     # image_path: "assets/20260130_231228.png"
-    icon_size: 48 # min:48, max:256, default: 48
+    icon_size: 128 # min:48, max:256, default: 48 - moderate size for better balance
