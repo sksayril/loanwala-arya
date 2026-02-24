@@ -9,6 +9,8 @@ import 'income_tax_calculator_screen.dart';
 import 'vat_calculator_screen.dart';
 import 'house_rent_calculator_screen.dart';
 import '../services/loan_api_service.dart';
+import '../services/ad_helper.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,11 +22,77 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isApplyNowActive = false;
   bool _isLoading = true;
+  RewardedAd? _rewardedAd;
+  bool _isLoadingAd = false;
 
   @override
   void initState() {
     super.initState();
     _checkApplyNowStatus();
+    _loadRewardedAd();
+  }
+
+  Future<void> _loadRewardedAd() async {
+    setState(() {
+      _isLoadingAd = true;
+    });
+    
+    final ad = await AdHelper.loadRewardedAd();
+    if (mounted) {
+      setState(() {
+        _rewardedAd = ad;
+        _isLoadingAd = false;
+      });
+    }
+  }
+
+  void _showRewardedAd(BuildContext context) {
+    if (_rewardedAd != null) {
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (RewardedAd ad) {
+          ad.dispose();
+          _loadRewardedAd();
+          // Navigate to CIBIL screen after ad is dismissed
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CheckCibilScreen(),
+            ),
+          );
+        },
+        onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+          ad.dispose();
+          _loadRewardedAd();
+          // Navigate to CIBIL screen even if ad fails
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CheckCibilScreen(),
+            ),
+          );
+        },
+      );
+
+      _rewardedAd!.show(
+        onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+        },
+      );
+    } else {
+      // If ad is not loaded, navigate directly
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const CheckCibilScreen(),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _rewardedAd?.dispose();
+    super.dispose();
   }
 
   Future<void> _checkApplyNowStatus() async {
@@ -228,12 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CheckCibilScreen(),
-                    ),
-                  );
+                  _showRewardedAd(context);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

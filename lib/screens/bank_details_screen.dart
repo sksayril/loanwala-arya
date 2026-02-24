@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'bank_verification_loader_screen.dart';
+import '../services/loan_data_service.dart';
+import '../services/ad_helper.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class BankDetailsScreen extends StatefulWidget {
   const BankDetailsScreen({super.key});
@@ -16,6 +19,136 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
   final _confirmAccountController = TextEditingController();
   final _ifscController = TextEditingController();
   bool _isConfirmed = false;
+  bool _isSubmitting = false;
+  final LoanDataService _loanDataService = LoanDataService();
+  RewardedAd? _rewardedAd;
+  bool _isLoadingAd = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
+  }
+
+  Future<void> _loadRewardedAd() async {
+    setState(() {
+      _isLoadingAd = true;
+    });
+    
+    final ad = await AdHelper.loadRewardedAd();
+    if (mounted) {
+      setState(() {
+        _rewardedAd = ad;
+        _isLoadingAd = false;
+      });
+    }
+  }
+
+  Future<void> _submitAndNavigate() async {
+    if (_formKey.currentState!.validate() && _isConfirmed) {
+      setState(() {
+        _isSubmitting = true;
+      });
+
+      // Save bank details to service
+      _loanDataService.updateBankDetails(
+        bankName: _bankNameController.text.trim(),
+        accountNumber: _accountController.text.trim(),
+        ifscCode: _ifscController.text.trim(),
+      );
+
+      // Submit loan data to API
+      final result = await _loanDataService.submitLoanData();
+      
+      setState(() {
+        _isSubmitting = false;
+      });
+
+      if (result['success'] == true) {
+        // Show success message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result['message'] ?? 'Loan data submitted successfully',
+                style: GoogleFonts.inter(),
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+        
+        // Navigate to loader
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BankVerificationLoaderScreen(),
+            ),
+          );
+        }
+      } else {
+        // Show error message
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result['message'] ?? 'Failed to submit loan data',
+                style: GoogleFonts.inter(),
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } else if (!_isConfirmed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please confirm the details', style: GoogleFonts.inter()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showRewardedAdAndSubmit() {
+    if (_formKey.currentState!.validate() && _isConfirmed) {
+      if (_rewardedAd != null) {
+        _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (RewardedAd ad) {
+            ad.dispose();
+            _loadRewardedAd();
+            // Submit data and navigate after ad is dismissed
+            _submitAndNavigate();
+          },
+          onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+            ad.dispose();
+            _loadRewardedAd();
+            // Submit data and navigate even if ad fails
+            _submitAndNavigate();
+          },
+        );
+
+        _rewardedAd!.show(
+          onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+      } else {
+        // If ad is not loaded, submit and navigate directly
+        _submitAndNavigate();
+      }
+    } else if (!_isConfirmed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please confirm the details', style: GoogleFonts.inter()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -23,6 +156,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
     _accountController.dispose();
     _confirmAccountController.dispose();
     _ifscController.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
   }
 
@@ -182,10 +316,20 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                       TextFormField(
                         controller: _ifscController,
                         textCapitalization: TextCapitalization.characters,
+                        maxLength: 11,
                         decoration: _inputDecoration(
                           hintText: 'HDFC0001234',
-                        ),
-                        style: GoogleFonts.inter(fontSize: 16),
+                        ).copyWith(counterText: ""),
+                        style: GoogleFonts.inter(fontSize: 16, letterSpacing: 1.0),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter IFSC code';
+                          }
+                          if (value.length != 11) {
+                            return 'IFSC code must be 11 characters';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -252,41 +396,48 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate() && _isConfirmed) {
-                      // Process bank details
-                      // Navigate to loader
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BankVerificationLoaderScreen(),
-                        ),
-                      );
-                    } else if (!_isConfirmed) {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Please confirm the details', style: GoogleFonts.inter()),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: (_isSubmitting || _isLoadingAd) ? null : _showRewardedAdAndSubmit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF7C3AED),
+                    backgroundColor: _isSubmitting 
+                        ? Colors.grey 
+                        : const Color(0xFF7C3AED),
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Verify Bank Account',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: _isSubmitting
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Submitting...',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          'Verify Bank Account',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ),

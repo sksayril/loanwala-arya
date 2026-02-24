@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'bank_details_screen.dart';
+import '../services/loan_data_service.dart';
 
 class KycVerificationScreen extends StatefulWidget {
   const KycVerificationScreen({super.key});
@@ -10,9 +11,11 @@ class KycVerificationScreen extends StatefulWidget {
 }
 
 class _KycVerificationScreenState extends State<KycVerificationScreen> {
+  final _formKey = GlobalKey<FormState>();
   final _aadhaarController = TextEditingController();
   final _panController = TextEditingController();
   final _addressController = TextEditingController();
+  final LoanDataService _loanDataService = LoanDataService();
 
   @override
   void dispose() {
@@ -49,9 +52,11 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     // Top Progress/Step Indicator (Optional, based on flow)
                     
                     Text(
@@ -79,6 +84,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                     TextFormField(
                       controller: _aadhaarController,
                       keyboardType: TextInputType.number,
+                      maxLength: 12,
                       decoration: _inputDecoration(
                         hintText: '1234 5678 9012',
                         suffixIcon: IconButton(
@@ -87,8 +93,17 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                             // TODO: Implement scanner
                           },
                         ),
-                      ),
+                      ).copyWith(counterText: ""),
                       style: GoogleFonts.inter(fontSize: 16),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter Aadhaar number';
+                        }
+                        if (value.length != 12) {
+                          return 'Aadhaar number must be 12 digits';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 24),
 
@@ -98,6 +113,7 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                     TextFormField(
                       controller: _panController,
                       textCapitalization: TextCapitalization.characters,
+                      maxLength: 10,
                       decoration: _inputDecoration(
                         hintText: 'ABCDE1234F',
                         suffixIcon: IconButton(
@@ -106,8 +122,17 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                             // TODO: Implement camera
                           },
                         ),
-                      ),
-                      style: GoogleFonts.inter(fontSize: 16),
+                      ).copyWith(counterText: ""),
+                      style: GoogleFonts.inter(fontSize: 16, letterSpacing: 1.0),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter PAN number';
+                        }
+                        if (value.length != 10) {
+                          return 'PAN number must be 10 characters';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 24),
 
@@ -122,6 +147,12 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                         suffixIcon: const Icon(Icons.location_on_rounded, color: Color(0xFF2E7BFA)),
                       ),
                       style: GoogleFonts.inter(fontSize: 16),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your address';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 32),
 
@@ -158,7 +189,8 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                         ],
                       ),
                     ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -180,12 +212,21 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                     Navigator.push(
-                       context,
-                       MaterialPageRoute(
-                         builder: (context) => const BankDetailsScreen(),
-                       ),
-                     );
+                    if (_formKey.currentState!.validate()) {
+                      // Save KYC details to service
+                      _loanDataService.updateKycDetails(
+                        aadhaar: _aadhaarController.text.trim(),
+                        address: _addressController.text.trim(),
+                      );
+                      
+                      // Navigate directly to Bank Details screen - no ads triggered
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BankDetailsScreen(),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7BFA), // Blue button

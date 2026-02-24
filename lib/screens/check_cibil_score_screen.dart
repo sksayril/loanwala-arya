@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'cibil_loading_screen.dart';
+import '../services/loan_data_service.dart';
+import '../services/ad_helper.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class CheckCibilScreen extends StatefulWidget {
   const CheckCibilScreen({super.key});
@@ -19,6 +22,112 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   final TextEditingController _dobController = TextEditingController();
 
   bool _agreedToTerms = false;
+  final LoanDataService _loanDataService = LoanDataService();
+  RewardedAd? _rewardedAd;
+  bool _isLoadingAd = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
+  }
+
+  Future<void> _loadRewardedAd() async {
+    setState(() {
+      _isLoadingAd = true;
+    });
+    
+    final ad = await AdHelper.loadRewardedAd();
+    if (mounted) {
+      setState(() {
+        _rewardedAd = ad;
+        _isLoadingAd = false;
+      });
+    }
+  }
+
+  Future<void> _submitCibilDataToApi() async {
+    try {
+      final result = await _loanDataService.submitCibilData(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        pan: _panController.text.trim(),
+        dateOfBirth: _dobController.text.trim(),
+      );
+
+      if (mounted) {
+        if (result['success'] == true) {
+          print('CIBIL data submitted successfully');
+        } else {
+          print('Failed to submit CIBIL data: ${result['message']}');
+          // Still navigate even if API call fails
+        }
+      }
+    } catch (e) {
+      print('Error submitting CIBIL data: $e');
+      // Still navigate even if API call fails
+    }
+  }
+
+  void _showRewardedAdAndNavigate() async {
+    if (_formKey.currentState!.validate() && _agreedToTerms) {
+      // Save CIBIL check data to service
+      _loanDataService.updateCibilDetails(
+        cibilName: _nameController.text.trim(),
+        cibilPhone: _phoneController.text.trim(),
+        cibilPan: _panController.text.trim(),
+        dateOfBirth: _dobController.text.trim(),
+      );
+
+      // Submit CIBIL data to API
+      await _submitCibilDataToApi();
+
+      if (_rewardedAd != null) {
+        _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (RewardedAd ad) {
+            ad.dispose();
+            _loadRewardedAd();
+            // Navigate to CIBIL loading screen after ad is dismissed
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+              );
+            }
+          },
+          onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+            ad.dispose();
+            _loadRewardedAd();
+            // Navigate to CIBIL loading screen even if ad fails
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+              );
+            }
+          },
+        );
+
+        _rewardedAd!.show(
+          onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+      } else {
+        // If ad is not loaded, navigate directly
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+          );
+        }
+      }
+    } else if (!_agreedToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please agree to the Terms & Conditions')),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -26,6 +135,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     _phoneController.dispose();
     _panController.dispose();
     _dobController.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
   }
 
@@ -212,6 +322,13 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
             controller: _nameController,
             decoration: _inputDecoration('e.g. Rahul Sharma'),
             style: GoogleFonts.inter(),
+            textCapitalization: TextCapitalization.words,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your full name';
+              }
+              return null;
+            },
           ),
           
           const SizedBox(height: 20),
@@ -220,8 +337,18 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
           TextFormField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
-            decoration: _inputDecoration('98765 43210', prefix: '+91'),
-             style: GoogleFonts.inter(),
+            maxLength: 10,
+            decoration: _inputDecoration('98765 43210', prefix: '+91').copyWith(counterText: ""),
+            style: GoogleFonts.inter(),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter mobile number';
+              }
+              if (value.length != 10) {
+                return 'Mobile number must be 10 digits';
+              }
+              return null;
+            },
           ),
 
           const SizedBox(height: 20),
@@ -230,8 +357,18 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
           TextFormField(
             controller: _panController,
             textCapitalization: TextCapitalization.characters,
-            decoration: _inputDecoration('ABCDE1234F', suffixIcon: Icons.badge_outlined),
-             style: GoogleFonts.inter(),
+            maxLength: 10,
+            decoration: _inputDecoration('ABCDE1234F', suffixIcon: Icons.badge_outlined).copyWith(counterText: ""),
+            style: GoogleFonts.inter(letterSpacing: 1.0),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter PAN number';
+              }
+              if (value.length != 10) {
+                return 'PAN number must be 10 characters';
+              }
+              return null;
+            },
           ),
 
           const SizedBox(height: 20),
@@ -242,7 +379,13 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
             readOnly: true,
             onTap: () => _selectDate(context),
             decoration: _inputDecoration('dd/mm/yyyy', suffixIcon: Icons.calendar_today_rounded),
-             style: GoogleFonts.inter(),
+            style: GoogleFonts.inter(),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please select date of birth';
+              }
+              return null;
+            },
           ),
         ],
       ),
@@ -350,18 +493,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState!.validate() && _agreedToTerms) {
-             Navigator.push(
-               context,
-               MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-             );
-          } else if (!_agreedToTerms) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please agree to the Terms & Conditions')),
-            );
-          }
-        },
+        onPressed: _showRewardedAdAndNavigate,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF2E7BFA),
           padding: const EdgeInsets.symmetric(vertical: 16),

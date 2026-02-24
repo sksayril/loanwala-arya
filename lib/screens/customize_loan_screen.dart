@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
 import 'personal_details_screen.dart';
+import '../services/loan_data_service.dart';
+import '../services/ad_helper.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class CustomizeLoanScreen extends StatefulWidget {
   final String loanType;
@@ -27,6 +30,112 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
   final double _minLoan = 5000;
   final double _maxLoan = 200000;
   final double _interestRate = 12.0; // 12% p.a.
+  final LoanDataService _loanDataService = LoanDataService();
+  RewardedAd? _rewardedAd;
+  bool _isLoadingAd = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
+  }
+
+  Future<void> _loadRewardedAd() async {
+    setState(() {
+      _isLoadingAd = true;
+    });
+    
+    final ad = await AdHelper.loadRewardedAd();
+    if (mounted) {
+      setState(() {
+        _rewardedAd = ad;
+        _isLoadingAd = false;
+      });
+    }
+  }
+
+  void _showRewardedAdAndNavigate() {
+    if (!_agreedToTerms) return;
+
+    // Calculate EMI
+    double monthlyRate = _interestRate / (12 * 100);
+    double emi = (_loanAmount * monthlyRate * pow(1 + monthlyRate, _selectedTenure)) /
+        (pow(1 + monthlyRate, _selectedTenure) - 1);
+    
+    // Save loan details to service
+    _loanDataService.updateLoanDetails(
+      loanType: widget.loanType,
+      loanAmount: _loanAmount,
+      tenure: _selectedTenure,
+      interestRate: _interestRate,
+      emi: emi,
+    );
+
+    if (_rewardedAd != null) {
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (RewardedAd ad) {
+          ad.dispose();
+          _loadRewardedAd();
+          // Navigate to Personal Details screen after ad is dismissed
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PersonalDetailsScreen(
+                  loanAmount: _loanAmount,
+                  tenure: _selectedTenure,
+                  loanType: widget.loanType,
+                ),
+              ),
+            );
+          }
+        },
+        onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+          ad.dispose();
+          _loadRewardedAd();
+          // Navigate to Personal Details screen even if ad fails
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PersonalDetailsScreen(
+                  loanAmount: _loanAmount,
+                  tenure: _selectedTenure,
+                  loanType: widget.loanType,
+                ),
+              ),
+            );
+          }
+        },
+      );
+
+      _rewardedAd!.show(
+        onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+        },
+      );
+    } else {
+      // If ad is not loaded, navigate directly
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PersonalDetailsScreen(
+              loanAmount: _loanAmount,
+              tenure: _selectedTenure,
+              loanType: widget.loanType,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _rewardedAd?.dispose();
+    super.dispose();
+  }
 
   double _calculateEMI() {
     double monthlyRate = _interestRate / (12 * 100);
@@ -362,20 +471,7 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _agreedToTerms
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PersonalDetailsScreen(
-                                loanAmount: _loanAmount,
-                                tenure: _selectedTenure,
-                                loanType: widget.loanType,
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
+                  onPressed: _agreedToTerms ? _showRewardedAdAndNavigate : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
                     disabledBackgroundColor: Colors.grey[300],

@@ -2,15 +2,88 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/loan_api_service.dart';
 import '../providers/theme_provider.dart';
+import '../services/ad_helper.dart';
 import 'package:provider/provider.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-class LoanDetailsScreen extends StatelessWidget {
+class LoanDetailsScreen extends StatefulWidget {
   final LoanApiData loan;
 
   const LoanDetailsScreen({
     super.key,
     required this.loan,
   });
+
+  @override
+  State<LoanDetailsScreen> createState() => _LoanDetailsScreenState();
+}
+
+class _LoanDetailsScreenState extends State<LoanDetailsScreen> {
+  RewardedAd? _rewardedAd;
+  bool _isLoadingAd = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
+  }
+
+  Future<void> _loadRewardedAd() async {
+    setState(() {
+      _isLoadingAd = true;
+    });
+    
+    final ad = await AdHelper.loadRewardedAd();
+    if (mounted) {
+      setState(() {
+        _rewardedAd = ad;
+        _isLoadingAd = false;
+      });
+    }
+  }
+
+  void _showRewardedAdAndLaunch() {
+    if (widget.loan.url != null && widget.loan.url!.isNotEmpty) {
+      if (_rewardedAd != null) {
+        _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (RewardedAd ad) {
+            ad.dispose();
+            _loadRewardedAd();
+            // Launch URL after ad is dismissed
+            _launchURL(widget.loan.url!, context);
+          },
+          onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+            ad.dispose();
+            _loadRewardedAd();
+            // Launch URL even if ad fails
+            _launchURL(widget.loan.url!, context);
+          },
+        );
+
+        _rewardedAd!.show(
+          onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+            print('User earned reward: ${reward.amount} ${reward.type}');
+          },
+        );
+      } else {
+        // If ad is not loaded, launch URL directly
+        _launchURL(widget.loan.url!, context);
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Application URL not available'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _rewardedAd?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,10 +126,10 @@ class LoanDetailsScreen extends StatelessWidget {
                       width: 1,
                     ),
                   ),
-                  child: loan.bankLogo != null && loan.bankLogo!.isNotEmpty
+                  child: widget.loan.bankLogo != null && widget.loan.bankLogo!.isNotEmpty
                       ? ClipOval(
                           child: Image.network(
-                            loan.bankLogo!,
+                            widget.loan.bankLogo!,
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,
@@ -81,7 +154,7 @@ class LoanDetailsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        loan.companyName ?? 'Financial Institution',
+                        widget.loan.companyName ?? 'Financial Institution',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -90,7 +163,7 @@ class LoanDetailsScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        loan.title ?? 'Loan',
+                        widget.loan.title ?? 'Loan',
                         style: TextStyle(
                           fontSize: 14,
                           color: themeProvider.textSecondary,
@@ -104,9 +177,9 @@ class LoanDetailsScreen extends StatelessWidget {
             const SizedBox(height: 30),
             
             // Description
-            if (loan.description != null && loan.description!.isNotEmpty) ...[
+            if (widget.loan.description != null && widget.loan.description!.isNotEmpty) ...[
               Text(
-                loan.description!,
+                widget.loan.description!,
                 style: TextStyle(
                   fontSize: 14,
                   color: themeProvider.textPrimary,
@@ -121,17 +194,17 @@ class LoanDetailsScreen extends StatelessWidget {
               context,
               themeProvider,
               'Interest Rate',
-              loan.interestRate ?? 'N/A',
+              widget.loan.interestRate ?? 'N/A',
               Icons.percent,
               Colors.green,
             ),
             const SizedBox(height: 12),
-            if (loan.category != null)
+            if (widget.loan.category != null)
               _buildDetailCard(
                 context,
                 themeProvider,
                 'Category',
-                loan.category!.name ?? 'N/A',
+                widget.loan.category!.name ?? 'N/A',
                 Icons.category,
                 Colors.purple,
               ),
@@ -141,18 +214,7 @@ class LoanDetailsScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  if (loan.url != null && loan.url!.isNotEmpty) {
-                    _launchURL(loan.url!, context);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Application URL not available'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
+                onPressed: _showRewardedAdAndLaunch,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A5F),
                   foregroundColor: Colors.white,
