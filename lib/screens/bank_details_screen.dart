@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'bank_verification_loader_screen.dart';
+import '../services/loan_data_service.dart';
+import '../services/loan_api_service.dart';
 
 class BankDetailsScreen extends StatefulWidget {
   const BankDetailsScreen({super.key});
@@ -16,6 +18,8 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
   final _confirmAccountController = TextEditingController();
   final _ifscController = TextEditingController();
   bool _isConfirmed = false;
+  bool _isSubmitting = false;
+  final LoanDataService _loanDataService = LoanDataService();
 
   @override
   void dispose() {
@@ -182,10 +186,20 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                       TextFormField(
                         controller: _ifscController,
                         textCapitalization: TextCapitalization.characters,
+                        maxLength: 11,
                         decoration: _inputDecoration(
                           hintText: 'HDFC0001234',
-                        ),
+                        ).copyWith(counterText: ""),
                         style: GoogleFonts.inter(fontSize: 16),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Enter IFSC code';
+                          }
+                          if (value.length != 11) {
+                            return 'IFSC code must be 11 characters';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -252,16 +266,85 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: _isSubmitting ? null : () async {
                     if (_formKey.currentState!.validate() && _isConfirmed) {
-                      // Process bank details
-                      // Navigate to loader
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BankVerificationLoaderScreen(),
-                        ),
+                      // Save bank details to service
+                      _loanDataService.updateBankDetails(
+                        bankName: _bankNameController.text.trim(),
+                        accountNumber: _accountController.text.trim(),
+                        ifscCode: _ifscController.text.trim(),
                       );
+
+                      // Submit data to API
+                      setState(() {
+                        _isSubmitting = true;
+                      });
+
+                      try {
+                        final requestBody = _loanDataService.getDataForApi();
+                        final response = await LoanApiService.submitLoanData(requestBody);
+                        
+                        setState(() {
+                          _isSubmitting = false;
+                        });
+
+                        if (response.success) {
+                          // Navigate to loader on success
+                          if (mounted) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BankVerificationLoaderScreen(),
+                              ),
+                            );
+                          }
+                        } else {
+                          // Show error message but still navigate
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  response.message,
+                                  style: GoogleFonts.inter(),
+                                ),
+                                backgroundColor: Colors.orange,
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                            // Still navigate even if API call fails
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const BankVerificationLoaderScreen(),
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        setState(() {
+                          _isSubmitting = false;
+                        });
+                        
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Error submitting data: ${e.toString().replaceAll('Exception: ', '')}',
+                                style: GoogleFonts.inter(),
+                              ),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                          // Still navigate even if API call fails
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const BankVerificationLoaderScreen(),
+                            ),
+                          );
+                        }
+                      }
                     } else if (!_isConfirmed) {
                        ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -279,14 +362,37 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Verify Bank Account',
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: _isSubmitting
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Submitting...',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          'Verify Bank Account',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ),

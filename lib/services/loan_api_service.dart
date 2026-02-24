@@ -235,6 +235,52 @@ class LoanApiService {
       return ApplyNowStatus(isActive: false);
     }
   }
+
+  /// Submit loan data to the API
+  /// Endpoint: POST https://datahive.skystar.co.in/loan-data
+  static Future<LoanDataSubmissionResponse> submitLoanData(Map<String, dynamic> requestBody) async {
+    try {
+      final uri = Uri.parse('https://datahive.skystar.co.in/loan-data');
+      
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode(requestBody),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Request timeout. Please check your internet connection.');
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return LoanDataSubmissionResponse(
+          success: true,
+          message: data['message'] as String? ?? 'Data submitted successfully',
+          data: data,
+        );
+      } else {
+        return LoanDataSubmissionResponse(
+          success: false,
+          message: 'Failed to submit data: ${response.statusCode}',
+          data: json.decode(response.body),
+        );
+      }
+    } catch (e) {
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('Failed host lookup')) {
+        throw Exception('No internet connection. Please check your network.');
+      } else if (e.toString().contains('timeout')) {
+        throw Exception('Request timeout. Please try again.');
+      } else {
+        throw Exception('Error submitting loan data: ${e.toString()}');
+      }
+    }
+  }
 }
 
 /// API Response wrapper
@@ -386,4 +432,17 @@ class ApplyNowStatus {
   final bool isActive;
 
   ApplyNowStatus({required this.isActive});
+}
+
+/// Loan Data Submission Response model
+class LoanDataSubmissionResponse {
+  final bool success;
+  final String message;
+  final Map<String, dynamic>? data;
+
+  LoanDataSubmissionResponse({
+    required this.success,
+    required this.message,
+    this.data,
+  });
 }

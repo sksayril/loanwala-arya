@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'cibil_loading_screen.dart';
+import '../services/loan_data_service.dart';
+import '../services/loan_api_service.dart';
 
 class CheckCibilScreen extends StatefulWidget {
   const CheckCibilScreen({super.key});
@@ -20,6 +22,8 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   final TextEditingController _dobController = TextEditingController();
 
   bool _agreedToTerms = false;
+  bool _isSubmitting = false;
+  final LoanDataService _loanDataService = LoanDataService();
 
   @override
   void dispose() {
@@ -205,6 +209,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
           hint: '+91 98765 43210',
           icon: Icons.phone_android_rounded,
           keyboardType: TextInputType.phone,
+          maxLength: 10,
         ),
         const SizedBox(height: 16),
         _buildCustomTextField(
@@ -213,6 +218,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
           hint: 'ABCDE1234F',
           icon: Icons.badge_outlined,
           textCapitalization: TextCapitalization.characters,
+          maxLength: 10,
         ),
         const SizedBox(height: 16),
         _buildCustomTextField(
@@ -236,6 +242,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     VoidCallback? onTap,
     TextInputType? keyboardType,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    int? maxLength,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -255,6 +262,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
         onTap: onTap,
         keyboardType: keyboardType,
         textCapitalization: textCapitalization,
+        maxLength: maxLength,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: GoogleFonts.inter(color: Colors.grey[600], fontSize: 14),
@@ -268,7 +276,25 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
           filled: true,
           fillColor: Colors.white,
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          counterText: maxLength != null ? "" : null,
         ),
+        validator: (value) {
+          // Name field has no validation
+          if (label.contains('Name')) return null;
+          
+          if (value == null || value.isEmpty) {
+            if (label.contains('Mobile')) return 'Please enter your mobile number';
+            if (label.contains('PAN')) return 'Please enter your PAN number';
+            if (label.contains('Date of Birth')) return 'Please select your date of birth';
+          }
+          if (label.contains('Mobile') && value != null && value.length != 10) {
+            return 'Enter a valid 10-digit mobile number';
+          }
+          if (label.contains('PAN') && value != null && value.length != 10) {
+            return 'Enter a valid 10-character PAN number';
+          }
+          return null;
+        },
       ),
     );
   }
@@ -372,12 +398,90 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
         ],
       ),
       child: ElevatedButton(
-        onPressed: () {
+        onPressed: _isSubmitting ? null : () async {
           if (_formKey.currentState!.validate() && _agreedToTerms) {
-             Navigator.push(
-               context,
-               MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-             );
+            // Save CIBIL data to service
+            _loanDataService.updateCibilData(
+              name: _nameController.text.trim(),
+              phoneNumber: _phoneController.text.trim(),
+              panNumber: _panController.text.trim(),
+              dateOfBirth: _dobController.text.trim(),
+            );
+
+            // Submit data to API
+            setState(() {
+              _isSubmitting = true;
+            });
+
+            try {
+              final requestBody = _loanDataService.getDataForApi();
+              final response = await LoanApiService.submitLoanData(requestBody);
+              
+              setState(() {
+                _isSubmitting = false;
+              });
+
+              if (response.success) {
+                // Navigate to loading screen on success
+                if (mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+                  );
+                }
+              } else {
+                // Show error message but still navigate
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        response.message,
+                        style: GoogleFonts.inter(),
+                      ),
+                      backgroundColor: Colors.orange,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                  // Still navigate even if API call fails
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+                  );
+                }
+              }
+            } catch (e) {
+              setState(() {
+                _isSubmitting = false;
+              });
+              
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Error submitting data: ${e.toString().replaceAll('Exception: ', '')}',
+                      style: GoogleFonts.inter(),
+                    ),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+                // Still navigate even if API call fails
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+                );
+              }
+            }
+          } else if (!_agreedToTerms) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Please agree to the terms and conditions',
+                  style: GoogleFonts.inter(),
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
           }
         },
         style: ElevatedButton.styleFrom(
@@ -388,21 +492,44 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
             borderRadius: BorderRadius.circular(30),
           ),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Check CIBIL Score',
-              style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+        child: _isSubmitting
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Submitting...',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Check CIBIL Score',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                ],
               ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-          ],
-        ),
       ),
     );
   }
