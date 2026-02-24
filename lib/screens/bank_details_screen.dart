@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'bank_verification_loader_screen.dart';
+import '../services/ad_helper.dart';
 
 class BankDetailsScreen extends StatefulWidget {
   const BankDetailsScreen({super.key});
@@ -16,6 +18,13 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
   final _confirmAccountController = TextEditingController();
   final _ifscController = TextEditingController();
   bool _isConfirmed = false;
+  RewardedAd? _rewardedAd;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
+  }
 
   @override
   void dispose() {
@@ -23,7 +32,86 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
     _accountController.dispose();
     _confirmAccountController.dispose();
     _ifscController.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
+  }
+
+  void _loadRewardedAd() {
+    AdHelper.loadRewardedAd().then((ad) {
+      if (ad != null && mounted) {
+        setState(() {
+          _rewardedAd = ad;
+        });
+      }
+    });
+  }
+
+  void _showRewardedAdAndVerify() {
+    if (!_formKey.currentState!.validate() || !_isConfirmed) {
+      if (!_isConfirmed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please confirm the details', style: GoogleFonts.inter()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (_rewardedAd != null) {
+      // Set up callbacks before showing the ad
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          print('Ad dismissed');
+          ad.dispose();
+          _rewardedAd = null;
+          // Navigate to Bank Verification Loader screen after ad is dismissed
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BankVerificationLoaderScreen(),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('Ad failed to show: $error');
+          ad.dispose();
+          _rewardedAd = null;
+          // If ad fails to show, navigate directly
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BankVerificationLoaderScreen(),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+      );
+
+      // Show the rewarded ad
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+          // Navigation will happen in onAdDismissedFullScreenContent
+        },
+      );
+    } else {
+      // If ad is not loaded, navigate directly
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const BankVerificationLoaderScreen(),
+        ),
+      );
+      // Try to load ad for next time
+      _loadRewardedAd();
+    }
   }
 
   @override
@@ -252,25 +340,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate() && _isConfirmed) {
-                      // Process bank details
-                      // Navigate to loader
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BankVerificationLoaderScreen(),
-                        ),
-                      );
-                    } else if (!_isConfirmed) {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Please confirm the details', style: GoogleFonts.inter()),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: _showRewardedAdAndVerify,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF7C3AED),
                     padding: const EdgeInsets.symmetric(vertical: 18),

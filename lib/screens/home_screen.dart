@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'check_cibil_score_screen.dart';
 import 'customize_loan_screen.dart';
 import 'emi_calculator_screen.dart';
@@ -10,6 +11,7 @@ import 'income_tax_calculator_screen.dart';
 import 'vat_calculator_screen.dart';
 import 'house_rent_calculator_screen.dart';
 import '../services/loan_api_service.dart';
+import '../services/ad_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,11 +23,69 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isApplyNowActive = false;
   bool _isLoading = true;
+  RewardedAd? _rewardedAd;
 
   @override
   void initState() {
     super.initState();
     _checkApplyNowStatus();
+    _loadRewardedAd();
+  }
+
+  void _loadRewardedAd() {
+    AdHelper.loadRewardedAd().then((ad) {
+      if (ad != null) {
+        setState(() {
+          _rewardedAd = ad;
+        });
+        
+        // Set up full screen content callback
+        _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) {
+            ad.dispose();
+            _rewardedAd = null;
+            _loadRewardedAd(); // Load a new ad
+          },
+          onAdFailedToShowFullScreenContent: (ad, error) {
+            print('Ad failed to show: $error');
+            ad.dispose();
+            _rewardedAd = null;
+            _loadRewardedAd(); // Load a new ad
+          },
+        );
+      }
+    });
+  }
+
+  void _showRewardedAd(BuildContext context) {
+    if (_rewardedAd != null) {
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+          // Navigate to CIBIL screen after ad is watched
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CheckCibilScreen(),
+            ),
+          );
+        },
+      );
+    } else {
+      // If ad is not loaded, navigate directly
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const CheckCibilScreen(),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _rewardedAd?.dispose();
+    super.dispose();
   }
 
   Future<void> _checkApplyNowStatus() async {
@@ -122,12 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CheckCibilScreen(),
-                      ),
-                    );
+                    _showRewardedAd(context);
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -248,7 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -270,10 +325,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
                 color: iconColor.withOpacity(0.1),
                 shape: BoxShape.circle,
@@ -282,18 +338,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Icon(
                   icon,
                   color: iconColor,
-                  size: 32,
+                  size: 26,
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               title,
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.inter(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF1A1A1A),
                 height: 1.2,
@@ -377,10 +433,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     title,
@@ -399,7 +456,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -413,8 +470,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Icon(Icons.arrow_forward_ios, color: color, size: 12),
                       ),
                       SizedBox(
-                        width: 70,
-                        height: 70,
+                        width: 55,
+                        height: 55,
                         child: Lottie.asset(
                           'assets/Calculator.json',
                           fit: BoxFit.contain,

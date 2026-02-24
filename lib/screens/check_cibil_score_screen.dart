@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'cibil_loading_screen.dart';
+import '../services/ad_helper.dart';
 
 class CheckCibilScreen extends StatefulWidget {
   const CheckCibilScreen({super.key});
@@ -19,6 +21,13 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   final TextEditingController _dobController = TextEditingController();
 
   bool _agreedToTerms = false;
+  RewardedAd? _rewardedAd;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
+  }
 
   @override
   void dispose() {
@@ -26,7 +35,74 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     _phoneController.dispose();
     _panController.dispose();
     _dobController.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
+  }
+
+  void _loadRewardedAd() {
+    AdHelper.loadRewardedAd().then((ad) {
+      if (ad != null && mounted) {
+        setState(() {
+          _rewardedAd = ad;
+        });
+      }
+    });
+  }
+
+  void _showRewardedAdAndSubmit() {
+    if (_formKey.currentState!.validate() && _agreedToTerms) {
+      if (_rewardedAd != null) {
+        // Set up callbacks before showing the ad
+        _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) {
+            print('Ad dismissed');
+            ad.dispose();
+            _rewardedAd = null;
+            // Navigate to CIBIL loading screen after ad is dismissed
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+              );
+            }
+            _loadRewardedAd(); // Load a new ad for next time
+          },
+          onAdFailedToShowFullScreenContent: (ad, error) {
+            print('Ad failed to show: $error');
+            ad.dispose();
+            _rewardedAd = null;
+            // If ad fails to show, navigate directly
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+              );
+            }
+            _loadRewardedAd(); // Load a new ad for next time
+          },
+        );
+
+        // Show the rewarded ad
+        _rewardedAd!.show(
+          onUserEarnedReward: (ad, reward) {
+            print('User earned reward: ${reward.amount} ${reward.type}');
+            // Navigation will happen in onAdDismissedFullScreenContent
+          },
+        );
+      } else {
+        // If ad is not loaded, navigate directly
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+        );
+        // Try to load ad for next time
+        _loadRewardedAd();
+      }
+    } else if (!_agreedToTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please agree to the Terms & Conditions')),
+      );
+    }
   }
 
   Future<void> _selectDate(BuildContext context) async {
@@ -350,18 +426,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () {
-          if (_formKey.currentState!.validate() && _agreedToTerms) {
-             Navigator.push(
-               context,
-               MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-             );
-          } else if (!_agreedToTerms) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please agree to the Terms & Conditions')),
-            );
-          }
-        },
+        onPressed: _showRewardedAdAndSubmit,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF2E7BFA),
           padding: const EdgeInsets.symmetric(vertical: 16),

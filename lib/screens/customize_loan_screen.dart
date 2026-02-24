@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:math';
 import 'personal_details_screen.dart';
+import '../services/ad_helper.dart';
 
 class CustomizeLoanScreen extends StatefulWidget {
   final String loanType;
@@ -23,10 +25,105 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
   double _loanAmount = 150000;
   int _selectedTenure = 9; // in months
   bool _agreedToTerms = true;
+  RewardedAd? _rewardedAd;
 
   final double _minLoan = 5000;
   final double _maxLoan = 200000;
   final double _interestRate = 12.0; // 12% p.a.
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
+  }
+
+  @override
+  void dispose() {
+    _rewardedAd?.dispose();
+    super.dispose();
+  }
+
+  void _loadRewardedAd() {
+    AdHelper.loadRewardedAd().then((ad) {
+      if (ad != null && mounted) {
+        setState(() {
+          _rewardedAd = ad;
+        });
+      }
+    });
+  }
+
+  void _showRewardedAdAndContinue() {
+    if (!_agreedToTerms) {
+      return;
+    }
+
+    if (_rewardedAd != null) {
+      // Set up callbacks before showing the ad
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          print('Ad dismissed');
+          ad.dispose();
+          _rewardedAd = null;
+          // Navigate to Personal Details screen after ad is dismissed
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PersonalDetailsScreen(
+                  loanAmount: _loanAmount,
+                  tenure: _selectedTenure,
+                  loanType: widget.loanType,
+                ),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('Ad failed to show: $error');
+          ad.dispose();
+          _rewardedAd = null;
+          // If ad fails to show, navigate directly
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PersonalDetailsScreen(
+                  loanAmount: _loanAmount,
+                  tenure: _selectedTenure,
+                  loanType: widget.loanType,
+                ),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+      );
+
+      // Show the rewarded ad
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+          // Navigation will happen in onAdDismissedFullScreenContent
+        },
+      );
+    } else {
+      // If ad is not loaded, navigate directly
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PersonalDetailsScreen(
+            loanAmount: _loanAmount,
+            tenure: _selectedTenure,
+            loanType: widget.loanType,
+          ),
+        ),
+      );
+      // Try to load ad for next time
+      _loadRewardedAd();
+    }
+  }
 
   double _calculateEMI() {
     double monthlyRate = _interestRate / (12 * 100);
@@ -362,20 +459,7 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _agreedToTerms
-                      ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PersonalDetailsScreen(
-                                loanAmount: _loanAmount,
-                                tenure: _selectedTenure,
-                                loanType: widget.loanType,
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
+                  onPressed: _agreedToTerms ? _showRewardedAdAndContinue : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
                     disabledBackgroundColor: Colors.grey[300],

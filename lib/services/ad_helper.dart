@@ -6,8 +6,8 @@ class AdHelper {
   /// Returns null if ads are not configured
   static Future<RewardedAd?> loadRewardedAd() async {
     try {
-      // Replace with your actual rewarded ad unit ID
-      const String rewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917'; // Test ad unit ID
+      // Rewarded ad unit ID
+      const String rewardedAdUnitId = 'ca-app-pub-3922595204055302/5741387895';
       
       final Completer<RewardedAd?> completer = Completer<RewardedAd?>();
       
