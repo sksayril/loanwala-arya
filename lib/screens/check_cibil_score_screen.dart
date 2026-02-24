@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'cibil_loading_screen.dart';
 import '../services/ad_helper.dart';
+import '../services/loan_data_service.dart';
 
 class CheckCibilScreen extends StatefulWidget {
   const CheckCibilScreen({super.key});
@@ -49,59 +50,132 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     });
   }
 
-  void _showRewardedAdAndSubmit() {
-    if (_formKey.currentState!.validate() && _agreedToTerms) {
-      if (_rewardedAd != null) {
-        // Set up callbacks before showing the ad
-        _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-          onAdDismissedFullScreenContent: (ad) {
-            print('Ad dismissed');
-            ad.dispose();
-            _rewardedAd = null;
-            // Navigate to CIBIL loading screen after ad is dismissed
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-              );
-            }
-            _loadRewardedAd(); // Load a new ad for next time
-          },
-          onAdFailedToShowFullScreenContent: (ad, error) {
-            print('Ad failed to show: $error');
-            ad.dispose();
-            _rewardedAd = null;
-            // If ad fails to show, navigate directly
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-              );
-            }
-            _loadRewardedAd(); // Load a new ad for next time
-          },
-        );
+  void _submitCibilData() async {
+    // Show loading indicator
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
-        // Show the rewarded ad
-        _rewardedAd!.show(
-          onUserEarnedReward: (ad, reward) {
-            print('User earned reward: ${reward.amount} ${reward.type}');
-            // Navigation will happen in onAdDismissedFullScreenContent
-          },
+    try {
+      final result = await LoanDataService().submitLoanData();
+      
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        if (result['success'] == true) {
+          // Navigate to CIBIL loading screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+          );
+        } else {
+          // Show error but still navigate
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result['message'] ?? 'Failed to submit data',
+                style: GoogleFonts.inter(),
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          
+          // Navigate anyway
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        // Show error but still navigate
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error submitting data. Please try again.',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
         );
-      } else {
-        // If ad is not loaded, navigate directly
+        
+        // Navigate anyway
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
         );
-        // Try to load ad for next time
-        _loadRewardedAd();
       }
-    } else if (!_agreedToTerms) {
+    }
+  }
+
+  void _showRewardedAdAndSubmit() {
+    if (!_agreedToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please agree to the Terms & Conditions')),
       );
+      return;
+    }
+    
+    if (_formKey.currentState!.validate()) {
+      // Save CIBIL data
+      LoanDataService().updatePersonalDetails(
+        name: _nameController.text.trim(),
+        mobile: _phoneController.text.trim(),
+        pan: _panController.text.trim(),
+        dateOfBirth: _dobController.text.trim(),
+      );
+      
+      if (_rewardedAd != null) {
+        // Set up callbacks before showing the ad
+        _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) async {
+            print('Ad dismissed');
+            ad.dispose();
+            _rewardedAd = null;
+            
+            // Submit CIBIL data to API
+            if (mounted) {
+              _submitCibilData();
+            }
+            
+            _loadRewardedAd(); // Load a new ad for next time
+          },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('Ad failed to show: $error');
+          ad.dispose();
+          _rewardedAd = null;
+          // If ad fails to show, submit data and navigate directly
+          if (mounted) {
+            _submitCibilData();
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+      );
+
+      // Show the rewarded ad
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+          // Navigation will happen in onAdDismissedFullScreenContent
+        },
+      );
+      } else {
+        // If ad is not loaded, submit data and navigate directly
+        _submitCibilData();
+        // Try to load ad for next time
+        _loadRewardedAd();
+      }
     }
   }
 

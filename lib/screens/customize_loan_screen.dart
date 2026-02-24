@@ -4,6 +4,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:math';
 import 'personal_details_screen.dart';
 import '../services/ad_helper.dart';
+import '../services/loan_data_service.dart';
 
 class CustomizeLoanScreen extends StatefulWidget {
   final String loanType;
@@ -57,6 +58,13 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
     if (!_agreedToTerms) {
       return;
     }
+
+    // Save loan details
+    LoanDataService().updateLoanDetails(
+      loanAmount: _loanAmount,
+      tenure: _selectedTenure,
+      loanType: widget.loanType,
+    );
 
     if (_rewardedAd != null) {
       // Set up callbacks before showing the ad

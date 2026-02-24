@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'kyc_verification_screen.dart';
+import '../services/loan_data_service.dart';
 
 class PersonalDetailsScreen extends StatefulWidget {
   final double loanAmount;
@@ -21,6 +22,7 @@ class PersonalDetailsScreen extends StatefulWidget {
 class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _panController = TextEditingController();
   String? _selectedEmploymentType;
@@ -37,6 +39,7 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emailController.dispose();
     _mobileController.dispose();
     _panController.dispose();
     super.dispose();
@@ -168,6 +171,26 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                       ),
                       const SizedBox(height: 24),
 
+                      // Email Field
+                      _buildLabel('EMAIL ADDRESS'),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: _inputDecoration(hintText: 'e.g. rahul.sharma@example.com'),
+                        style: GoogleFonts.inter(fontSize: 16),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!value.contains('@') || !value.contains('.')) {
+                            return 'Enter a valid email address';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+
                       // PAN Field
                       _buildLabel('PERMANENT ACCOUNT NUMBER (PAN)'),
                       const SizedBox(height: 8),
@@ -281,6 +304,15 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate() && _selectedEmploymentType != null) {
+                      // Save personal details
+                      LoanDataService().updatePersonalDetails(
+                        name: _nameController.text.trim(),
+                        email: _emailController.text.trim(),
+                        mobile: _mobileController.text.trim(),
+                        pan: _panController.text.trim(),
+                        employmentType: _selectedEmploymentType,
+                      );
+                      
                       Navigator.push(
                         context,
                         MaterialPageRoute(

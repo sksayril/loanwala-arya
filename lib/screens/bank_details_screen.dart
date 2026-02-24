@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'bank_verification_loader_screen.dart';
 import '../services/ad_helper.dart';
+import '../services/loan_data_service.dart';
 
 class BankDetailsScreen extends StatefulWidget {
   const BankDetailsScreen({super.key});
@@ -46,7 +47,7 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
     });
   }
 
-  void _showRewardedAdAndVerify() {
+  void _showRewardedAdAndVerify() async {
     if (!_formKey.currentState!.validate() || !_isConfirmed) {
       if (!_isConfirmed) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -59,36 +60,35 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
       return;
     }
 
+    // Save bank details
+    LoanDataService().updateBankDetails(
+      bankName: _bankNameController.text.trim(),
+      accountNumber: _accountController.text.trim(),
+      ifscCode: _ifscController.text.trim(),
+    );
+
     if (_rewardedAd != null) {
       // Set up callbacks before showing the ad
       _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
-        onAdDismissedFullScreenContent: (ad) {
+        onAdDismissedFullScreenContent: (ad) async {
           print('Ad dismissed');
           ad.dispose();
           _rewardedAd = null;
-          // Navigate to Bank Verification Loader screen after ad is dismissed
+          
+          // Submit loan data to API
           if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const BankVerificationLoaderScreen(),
-              ),
-            );
+            _submitLoanData();
           }
+          
           _loadRewardedAd(); // Load a new ad for next time
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
           print('Ad failed to show: $error');
           ad.dispose();
           _rewardedAd = null;
-          // If ad fails to show, navigate directly
+          // If ad fails to show, submit data and navigate directly
           if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const BankVerificationLoaderScreen(),
-              ),
-            );
+            _submitLoanData();
           }
           _loadRewardedAd(); // Load a new ad for next time
         },
@@ -102,15 +102,85 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
         },
       );
     } else {
-      // If ad is not loaded, navigate directly
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const BankVerificationLoaderScreen(),
-        ),
-      );
+      // If ad is not loaded, submit data and navigate directly
+      _submitLoanData();
       // Try to load ad for next time
       _loadRewardedAd();
+    }
+  }
+
+  void _submitLoanData() async {
+    // Show loading indicator
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    try {
+      final result = await LoanDataService().submitLoanData();
+      
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        if (result['success'] == true) {
+          // Navigate to verification loader screen
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BankVerificationLoaderScreen(),
+            ),
+          );
+        } else {
+          // Show error but still navigate
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result['message'] ?? 'Failed to submit data',
+                style: GoogleFonts.inter(),
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          
+          // Navigate anyway
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const BankVerificationLoaderScreen(),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        // Show error but still navigate
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error submitting data. Please try again.',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        
+        // Navigate anyway
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const BankVerificationLoaderScreen(),
+          ),
+        );
+      }
     }
   }
 

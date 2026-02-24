@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'bank_details_screen.dart';
 import '../services/ad_helper.dart';
+import '../services/loan_data_service.dart';
 
 class KycVerificationScreen extends StatefulWidget {
   const KycVerificationScreen({super.key});
@@ -43,6 +44,12 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   }
 
   void _showRewardedAdAndContinue() {
+    // Save KYC details
+    LoanDataService().updateKycDetails(
+      aadhaar: _aadhaarController.text.trim(),
+      address: _addressController.text.trim(),
+    );
+    
     if (_rewardedAd != null) {
       // Set up callbacks before showing the ad
       _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
