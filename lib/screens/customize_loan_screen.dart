@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:math';
-import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 import 'personal_details_screen.dart';
 import '../services/ad_helper.dart';
+import '../services/loan_data_service.dart';
 
 class CustomizeLoanScreen extends StatefulWidget {
   final String loanType;
@@ -25,77 +26,98 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
   double _loanAmount = 150000;
   int _selectedTenure = 9; // in months
   bool _agreedToTerms = true;
-  bool _isLoadingAd = false;
+  RewardedAd? _rewardedAd;
 
   final double _minLoan = 5000;
   final double _maxLoan = 200000;
   final double _interestRate = 12.0; // 12% p.a.
 
-  double _calculateEMI() {
-    double monthlyRate = _interestRate / (12 * 100);
-    double emi = (_loanAmount * monthlyRate * pow(1 + monthlyRate, _selectedTenure)) /
-        (pow(1 + monthlyRate, _selectedTenure) - 1);
-    return emi;
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
   }
 
-  Future<void> _handleContinue() async {
+  @override
+  void dispose() {
+    _rewardedAd?.dispose();
+    super.dispose();
+  }
+
+  void _loadRewardedAd() {
+    AdHelper.loadRewardedAd().then((ad) {
+      if (ad != null && mounted) {
+        setState(() {
+          _rewardedAd = ad;
+        });
+      }
+    });
+  }
+
+  void _showRewardedAdAndContinue() {
     if (!_agreedToTerms) {
       return;
     }
 
-    setState(() {
-      _isLoadingAd = true;
-    });
-
-    // Show rewarded ad before navigating to personal details screen
-    final bool adShown = await AdHelper.showRewardedAd(
-      onAdDismissed: () {
-        // Navigate to personal details screen after ad is dismissed
-        if (mounted) {
-          setState(() {
-            _isLoadingAd = false;
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PersonalDetailsScreen(
-                loanAmount: _loanAmount,
-                tenure: _selectedTenure,
-                loanType: widget.loanType,
-              ),
-            ),
-          );
-        }
-      },
-      onAdFailedToShow: () {
-        // If ad fails to show, still navigate to personal details screen
-        if (mounted) {
-          setState(() {
-            _isLoadingAd = false;
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PersonalDetailsScreen(
-                loanAmount: _loanAmount,
-                tenure: _selectedTenure,
-                loanType: widget.loanType,
-              ),
-            ),
-          );
-        }
-      },
-      onUserEarnedReward: () {
-        // User earned reward - can add any reward logic here
-        print('User earned reward for watching ad');
-      },
+    // Save loan details
+    LoanDataService().setLoanDetails(
+      loanAmount: _loanAmount,
+      tenure: _selectedTenure,
+      loanType: widget.loanType,
     );
 
-    // If ad couldn't be loaded/shown, navigate directly
-    if (!adShown && mounted) {
-      setState(() {
-        _isLoadingAd = false;
-      });
+    if (_rewardedAd != null) {
+      // Set up callbacks before showing the ad
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          print('Ad dismissed');
+          ad.dispose();
+          _rewardedAd = null;
+          // Navigate to Personal Details screen after ad is dismissed
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PersonalDetailsScreen(
+                  loanAmount: _loanAmount,
+                  tenure: _selectedTenure,
+                  loanType: widget.loanType,
+                ),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('Ad failed to show: $error');
+          ad.dispose();
+          _rewardedAd = null;
+          // If ad fails to show, navigate directly
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PersonalDetailsScreen(
+                  loanAmount: _loanAmount,
+                  tenure: _selectedTenure,
+                  loanType: widget.loanType,
+                ),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+      );
+
+      // Show the rewarded ad
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+          // Navigation will happen in onAdDismissedFullScreenContent
+        },
+      );
+    } else {
+      // If ad is not loaded, navigate directly
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -106,7 +128,16 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
           ),
         ),
       );
+      // Try to load ad for next time
+      _loadRewardedAd();
     }
+  }
+
+  double _calculateEMI() {
+    double monthlyRate = _interestRate / (12 * 100);
+    double emi = (_loanAmount * monthlyRate * pow(1 + monthlyRate, _selectedTenure)) /
+        (pow(1 + monthlyRate, _selectedTenure) - 1);
+    return emi;
   }
 
   @override
@@ -114,9 +145,9 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
     double emi = _calculateEMI();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FB),
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF8F9FB),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -138,123 +169,282 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
-                  // Interactive Circular Amount Display
-                  SleekCircularSlider(
-                    min: _minLoan,
-                    max: _maxLoan,
-                    initialValue: _loanAmount,
-                    appearance: CircularSliderAppearance(
-                      size: 280,
-                      startAngle: 270,
-                      angleRange: 360,
-                      customColors: CustomSliderColors(
-                        progressBarColor: const Color(0xFF8B5CF6),
-                        trackColor: const Color(0xFF8B5CF6).withOpacity(0.1),
-                        dotColor: Colors.white,
-                        shadowColor: const Color(0xFF8B5CF6),
-                        shadowMaxOpacity: 0.2,
-                      ),
-                      customWidths: CustomSliderWidths(
-                        progressBarWidth: 15,
-                        trackWidth: 15,
-                        handlerSize: 12,
-                      ),
-                    ),
-                    onChange: (double value) {
-                      setState(() {
-                        _loanAmount = value;
-                      });
-                    },
-                    innerWidget: (double value) {
-                      return Center(
-                        child: Container(
-                          width: 220,
-                          height: 220,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 20,
-                                offset: Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              '₹${value.toStringAsFixed(0).replaceAllMapped(
-                                    RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"),
-                                    (Match m) => "${m[1]},",
-                                  )}',
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFF1A1A1A),
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 40),
-                  // Tenure Selection Row
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _buildTenureChip(3),
-                      _buildTenureChip(9),
-                      _buildTenureChip(12),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                  // EMI Info Card
+                  // Loan Amount Section
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(24),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Monthly EMI: ₹${emi.toStringAsFixed(0).replaceAllMapped(
-                                RegExp(r"(\d{1,3})(?=(\d{3})+(?!\d))"),
-                                (Match m) => "${m[1]},",
-                              )}',
+                          'I WANT TO BORROW',
                           style: GoogleFonts.inter(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1A1A1A),
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Interest: ${_interestRate.toStringAsFixed(0)}% p.a.',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Text(
+                              '₹${_loanAmount.toStringAsFixed(0).replaceAllMapped(
+                                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                                    (Match m) => '${m[1]},',
+                                  )}',
+                              style: GoogleFonts.inter(
+                                color: Colors.black,
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(Icons.edit, color: Colors.grey[400], size: 20),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        SliderTheme(
+                          data: SliderThemeData(
+                            trackHeight: 6,
+                            activeTrackColor: const Color(0xFF8B5CF6),
+                            inactiveTrackColor: Colors.grey[300],
+                            thumbColor: Colors.white,
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 12,
+                              elevation: 4,
+                            ),
+                            overlayColor: const Color(0xFF8B5CF6).withOpacity(0.2),
+                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+                          ),
+                          child: Slider(
+                            value: _loanAmount,
+                            min: _minLoan,
+                            max: _maxLoan,
+                            onChanged: (value) {
+                              setState(() {
+                                _loanAmount = value;
+                              });
+                            },
+                          ),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '₹${_minLoan.toStringAsFixed(0)}',
+                              style: GoogleFonts.inter(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              '₹${_maxLoan.toStringAsFixed(0).replaceAllMapped(
+                                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                                    (Match m) => '${m[1]},',
+                                  )}',
+                              style: GoogleFonts.inter(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Tenure Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Select Tenure',
+                              style: GoogleFonts.inter(
+                                color: Colors.black,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'View Details',
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFF8B5CF6),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildTenureButton(3),
+                            _buildTenureButton(6),
+                            _buildTenureButton(9),
+                            _buildTenureButton(12),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // EMI Display
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3E8FF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF8B5CF6),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.calendar_today,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Your monthly EMI',
+                                      style: GoogleFonts.inter(
+                                        color: Colors.grey[700],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    Text(
+                                      '₹${emi.toStringAsFixed(0).replaceAllMapped(
+                                            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                                            (Match m) => '${m[1]},',
+                                          )} /mo',
+                                      style: GoogleFonts.inter(
+                                        color: Colors.black,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'INTEREST',
+                                      style: GoogleFonts.inter(
+                                        color: Colors.grey[600],
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${_interestRate.toStringAsFixed(0)}% p.a.',
+                                      style: GoogleFonts.inter(
+                                        color: const Color(0xFF8B5CF6),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 20),
+
+                  // Terms & Conditions
+                  Row(
+                    children: [
+                      Transform.scale(
+                        scale: 1.2,
+                        child: Checkbox(
+                          value: _agreedToTerms,
+                          onChanged: (value) {
+                            setState(() {
+                              _agreedToTerms = value ?? false;
+                            });
+                          },
+                          activeColor: const Color(0xFF8B5CF6),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: GoogleFonts.inter(
+                              color: Colors.grey[700],
+                              fontSize: 13,
+                            ),
+                            children: [
+                              const TextSpan(text: 'By clicking Continue, you agree to our '),
+                              TextSpan(
+                                text: 'Terms & Conditions',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFF8B5CF6),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const TextSpan(
+                                text: '. The interest rate is calculated on reducing balance method.',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 80),
                 ],
               ),
             ),
@@ -277,7 +467,7 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: (_agreedToTerms && !_isLoadingAd) ? _handleContinue : null,
+                  onPressed: _agreedToTerms ? _showRewardedAdAndContinue : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
                     disabledBackgroundColor: Colors.grey[300],
@@ -287,30 +477,21 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: _isLoadingAd
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Continue',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                          ],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Continue',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -320,7 +501,7 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
     );
   }
 
-  Widget _buildTenureChip(int months) {
+  Widget _buildTenureButton(int months) {
     bool isSelected = _selectedTenure == months;
     return GestureDetector(
       onTap: () {
@@ -329,26 +510,41 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        width: 70,
+        height: 70,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF8B5CF6).withOpacity(0.2) : Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            if (!isSelected)
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+          color: isSelected ? const Color(0xFF8B5CF6) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey[300]!,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '$months',
+              style: GoogleFonts.inter(
+                color: isSelected ? Colors.white : Colors.black,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              'MONTHS',
+              style: GoogleFonts.inter(
+                color: isSelected ? Colors.white : Colors.grey[600],
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (isSelected)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Icon(Icons.check, color: Colors.white, size: 14),
               ),
           ],
-        ),
-        child: Text(
-          '$months MONTHS',
-          style: GoogleFonts.inter(
-            color: isSelected ? const Color(0xFF8B5CF6) : Colors.grey[600],
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-          ),
         ),
       ),
     );

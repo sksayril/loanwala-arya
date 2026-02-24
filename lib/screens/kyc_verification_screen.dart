@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'bank_details_screen.dart';
 import '../services/ad_helper.dart';
+import '../services/loan_data_service.dart';
 
 class KycVerificationScreen extends StatefulWidget {
   const KycVerificationScreen({super.key});
@@ -14,68 +16,93 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
   final _aadhaarController = TextEditingController();
   final _panController = TextEditingController();
   final _addressController = TextEditingController();
-  bool _isLoadingAd = false;
+  RewardedAd? _rewardedAd;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
+  }
 
   @override
   void dispose() {
     _aadhaarController.dispose();
     _panController.dispose();
     _addressController.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
   }
 
-  Future<void> _handleContinue() async {
-    setState(() {
-      _isLoadingAd = true;
+  void _loadRewardedAd() {
+    AdHelper.loadRewardedAd().then((ad) {
+      if (ad != null && mounted) {
+        setState(() {
+          _rewardedAd = ad;
+        });
+      }
     });
+  }
 
-    // Show rewarded ad before navigating to bank details screen
-    final bool adShown = await AdHelper.showRewardedAd(
-      onAdDismissed: () {
-        // Navigate to bank details screen after ad is dismissed
-        if (mounted) {
-          setState(() {
-            _isLoadingAd = false;
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const BankDetailsScreen(),
-            ),
-          );
-        }
-      },
-      onAdFailedToShow: () {
-        // If ad fails to show, still navigate to bank details screen
-        if (mounted) {
-          setState(() {
-            _isLoadingAd = false;
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const BankDetailsScreen(),
-            ),
-          );
-        }
-      },
-      onUserEarnedReward: () {
-        // User earned reward - can add any reward logic here
-        print('User earned reward for watching ad');
-      },
+  void _showRewardedAdAndContinue() {
+    // Save KYC data
+    LoanDataService().setKycData(
+      aadhaarNumber: _aadhaarController.text.trim(),
+      pan: _panController.text.trim(),
+      address: _addressController.text.trim(),
     );
 
-    // If ad couldn't be loaded/shown, navigate directly
-    if (!adShown && mounted) {
-      setState(() {
-        _isLoadingAd = false;
-      });
+    if (_rewardedAd != null) {
+      // Set up callbacks before showing the ad
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          print('Ad dismissed');
+          ad.dispose();
+          _rewardedAd = null;
+          // Navigate to Bank Details screen after ad is dismissed
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BankDetailsScreen(),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('Ad failed to show: $error');
+          ad.dispose();
+          _rewardedAd = null;
+          // If ad fails to show, navigate directly
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BankDetailsScreen(),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+      );
+
+      // Show the rewarded ad
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+          // Navigation will happen in onAdDismissedFullScreenContent
+        },
+      );
+    } else {
+      // If ad is not loaded, navigate directly
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => const BankDetailsScreen(),
         ),
       );
+      // Try to load ad for next time
+      _loadRewardedAd();
     }
   }
 
@@ -236,33 +263,23 @@ class _KycVerificationScreenState extends State<KycVerificationScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoadingAd ? null : _handleContinue,
+                  onPressed: _showRewardedAdAndContinue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7BFA), // Blue button
-                    disabledBackgroundColor: Colors.grey[300],
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
-                  child: _isLoadingAd
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          'Continue',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  child: Text(
+                    'Continue',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ),

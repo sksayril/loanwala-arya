@@ -8,7 +8,7 @@ import 'providers/theme_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize AdMob
+  // Initialize Google Mobile Ads
   await MobileAds.instance.initialize();
   
   runApp(const MyApp());

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'kyc_verification_screen.dart';
+import '../services/loan_data_service.dart';
 
 class PersonalDetailsScreen extends StatefulWidget {
   final double loanAmount;
@@ -281,6 +282,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate() && _selectedEmploymentType != null) {
+                      // Save personal details
+                      LoanDataService().setPersonalDetails(
+                        name: _nameController.text.trim(),
+                        mobile: _mobileController.text.trim(),
+                        pan: _panController.text.trim(),
+                        employmentType: _selectedEmploymentType,
+                      );
+                      
                       Navigator.push(
                         context,
                         MaterialPageRoute(

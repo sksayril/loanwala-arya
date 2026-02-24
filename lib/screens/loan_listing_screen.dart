@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/loan_api_service.dart';
 import '../providers/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -544,53 +545,66 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
       _loadingLoanIndices.add(index);
     });
 
-    // Show rewarded ad before navigating to loan details screen
-    final bool adShown = await AdHelper.showRewardedAd(
-      onAdDismissed: () {
-        // Navigate to loan details screen after ad is dismissed
-        if (mounted) {
-          setState(() {
-            _loadingLoanIndices.remove(index);
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LoanDetailsScreen(loan: loan),
-            ),
-          );
-        }
-      },
-      onAdFailedToShow: () {
-        // If ad fails to show, still navigate to loan details screen
-        if (mounted) {
-          setState(() {
-            _loadingLoanIndices.remove(index);
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => LoanDetailsScreen(loan: loan),
-            ),
-          );
-        }
-      },
-      onUserEarnedReward: () {
-        // User earned reward - can add any reward logic here
-        print('User earned reward for watching ad');
-      },
-    );
-
-    // If ad couldn't be loaded/shown, navigate directly
-    if (!adShown && mounted) {
-      setState(() {
-        _loadingLoanIndices.remove(index);
-      });
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => LoanDetailsScreen(loan: loan),
-        ),
+    // Load and show rewarded ad before navigating to loan details screen
+    final rewardedAd = await AdHelper.loadRewardedAd();
+    
+    if (rewardedAd != null) {
+      // Set up callbacks before showing the ad
+      rewardedAd.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          print('Ad dismissed');
+          ad.dispose();
+          // Navigate to loan details screen after ad is dismissed
+          if (mounted) {
+            setState(() {
+              _loadingLoanIndices.remove(index);
+            });
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LoanDetailsScreen(loan: loan),
+              ),
+            );
+          }
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('Ad failed to show: $error');
+          ad.dispose();
+          // If ad fails to show, navigate directly
+          if (mounted) {
+            setState(() {
+              _loadingLoanIndices.remove(index);
+            });
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LoanDetailsScreen(loan: loan),
+              ),
+            );
+          }
+        },
       );
+
+      // Show the rewarded ad
+      rewardedAd.show(
+        onUserEarnedReward: (ad, reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+          // Navigation will happen in onAdDismissedFullScreenContent
+        },
+      );
+    } else {
+      // If ad is not loaded, navigate directly
+      if (mounted) {
+        setState(() {
+          _loadingLoanIndices.remove(index);
+        });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LoanDetailsScreen(loan: loan),
+          ),
+        );
+      }
     }
   }
 

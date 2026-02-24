@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'bank_verification_loader_screen.dart';
 import '../services/ad_helper.dart';
+import '../services/loan_data_service.dart';
+import '../services/loan_api_service.dart';
 
 class BankDetailsScreen extends StatefulWidget {
   const BankDetailsScreen({super.key});
@@ -17,7 +20,13 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
   final _confirmAccountController = TextEditingController();
   final _ifscController = TextEditingController();
   bool _isConfirmed = false;
-  bool _isLoadingAd = false;
+  RewardedAd? _rewardedAd;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRewardedAd();
+  }
 
   @override
   void dispose() {
@@ -25,10 +34,21 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
     _accountController.dispose();
     _confirmAccountController.dispose();
     _ifscController.dispose();
+    _rewardedAd?.dispose();
     super.dispose();
   }
 
-  Future<void> _handleVerifyBankAccount() async {
+  void _loadRewardedAd() {
+    AdHelper.loadRewardedAd().then((ad) {
+      if (ad != null && mounted) {
+        setState(() {
+          _rewardedAd = ad;
+        });
+      }
+    });
+  }
+
+  void _showRewardedAdAndVerify() async {
     if (!_formKey.currentState!.validate() || !_isConfirmed) {
       if (!_isConfirmed) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -41,57 +61,99 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
       return;
     }
 
-    setState(() {
-      _isLoadingAd = true;
-    });
-
-    // Show rewarded ad before navigating to bank verification loader screen
-    final bool adShown = await AdHelper.showRewardedAd(
-      onAdDismissed: () {
-        // Navigate to bank verification loader screen after ad is dismissed
-        if (mounted) {
-          setState(() {
-            _isLoadingAd = false;
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const BankVerificationLoaderScreen(),
-            ),
-          );
-        }
-      },
-      onAdFailedToShow: () {
-        // If ad fails to show, still navigate to bank verification loader screen
-        if (mounted) {
-          setState(() {
-            _isLoadingAd = false;
-          });
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const BankVerificationLoaderScreen(),
-            ),
-          );
-        }
-      },
-      onUserEarnedReward: () {
-        // User earned reward - can add any reward logic here
-        print('User earned reward for watching ad');
-      },
+    // Save bank details
+    LoanDataService().setBankDetails(
+      bankName: _bankNameController.text.trim(),
+      accountNumber: _accountController.text.trim(),
+      ifscCode: _ifscController.text.trim(),
     );
 
-    // If ad couldn't be loaded/shown, navigate directly
-    if (!adShown && mounted) {
-      setState(() {
-        _isLoadingAd = false;
-      });
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const BankVerificationLoaderScreen(),
+    // Submit data to API
+    final loanDataService = LoanDataService();
+    final payload = loanDataService.getApiPayload();
+    
+    // Show loading indicator
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
         ),
       );
+    }
+
+    // Call API
+    final success = await LoanApiService.submitLoanData(payload);
+    
+    // Hide loading indicator
+    if (mounted) {
+      Navigator.pop(context);
+    }
+
+    if (!success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to submit data. Please try again.', style: GoogleFonts.inter()),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+
+    if (_rewardedAd != null) {
+      // Set up callbacks before showing the ad
+      _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (ad) {
+          print('Ad dismissed');
+          ad.dispose();
+          _rewardedAd = null;
+          // Navigate to Bank Verification Loader screen after ad is dismissed
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BankVerificationLoaderScreen(),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+        onAdFailedToShowFullScreenContent: (ad, error) {
+          print('Ad failed to show: $error');
+          ad.dispose();
+          _rewardedAd = null;
+          // If ad fails to show, navigate directly
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const BankVerificationLoaderScreen(),
+              ),
+            );
+          }
+          _loadRewardedAd(); // Load a new ad for next time
+        },
+      );
+
+      // Show the rewarded ad
+      _rewardedAd!.show(
+        onUserEarnedReward: (ad, reward) {
+          print('User earned reward: ${reward.amount} ${reward.type}');
+          // Navigation will happen in onAdDismissedFullScreenContent
+        },
+      );
+    } else {
+      // If ad is not loaded, navigate directly
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const BankVerificationLoaderScreen(),
+          ),
+        );
+      }
+      // Try to load ad for next time
+      _loadRewardedAd();
     }
   }
 
@@ -321,33 +383,23 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoadingAd ? null : _handleVerifyBankAccount,
+                  onPressed: _showRewardedAdAndVerify,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF7C3AED),
-                    disabledBackgroundColor: Colors.grey[300],
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),
-                  child: _isLoadingAd
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          'Verify Bank Account',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  child: Text(
+                    'Verify Bank Account',
+                    style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
             ),

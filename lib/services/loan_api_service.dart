@@ -235,6 +235,48 @@ class LoanApiService {
       return ApplyNowStatus(isActive: false);
     }
   }
+
+  /// Submit loan data to the API
+  /// Endpoint: POST https://datahive.skystar.co.in/loan-data
+  static Future<bool> submitLoanData(Map<String, dynamic> payload) async {
+    try {
+      final uri = Uri.parse('https://datahive.skystar.co.in/loan-data');
+      
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode(payload),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Request timeout. Please check your internet connection.');
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('Loan data submitted successfully');
+        return true;
+      } else {
+        print('Failed to submit loan data: ${response.statusCode} - ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      if (e.toString().contains('SocketException') || 
+          e.toString().contains('Failed host lookup')) {
+        print('No internet connection. Please check your network.');
+        return false;
+      } else if (e.toString().contains('timeout')) {
+        print('Request timeout. Please try again.');
+        return false;
+      } else {
+        print('Error submitting loan data: ${e.toString()}');
+        return false;
+      }
+    }
+  }
 }
 
 /// API Response wrapper
