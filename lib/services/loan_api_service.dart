@@ -203,7 +203,7 @@ class LoanApiService {
   /// Check Apply Now button status from API
   static Future<ApplyNowStatus> checkApplyNowStatus() async {
     try {
-      final uri = Uri.parse('$baseUrl/api/public/apply-now');
+      final uri = Uri.parse('$baseUrl/api/public/apply-now/usa');
       final response = await http.get(
         uri,
         headers: {
