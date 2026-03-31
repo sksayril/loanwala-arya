@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math';
 import 'personal_details_screen.dart';
+import '../services/ad_helper.dart';
 
 class CustomizeLoanScreen extends StatefulWidget {
   final String loanType;
@@ -202,15 +203,22 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
                       child: ElevatedButton(
                         onPressed: _agreedToTerms
                             ? () {
-                                Navigator.push(
+                                AdHelper.showRewardedAdWithNavigation(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PersonalDetailsScreen(
-                                      loanAmount: _loanAmount,
-                                      tenure: _selectedTenure,
-                                      loanType: widget.loanType,
-                                    ),
-                                  ),
+                                  onComplete: () {
+                                    if (context.mounted) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PersonalDetailsScreen(
+                                            loanAmount: _loanAmount,
+                                            tenure: _selectedTenure,
+                                            loanType: widget.loanType,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
                                 );
                               }
                             : null,

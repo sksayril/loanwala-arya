@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/loan_api_service.dart';
 import '../providers/theme_provider.dart';
 import 'package:provider/provider.dart';
+import '../services/ad_helper.dart';
 
 class LoanDetailsScreen extends StatelessWidget {
   final LoanApiData loan;
@@ -142,16 +143,25 @@ class LoanDetailsScreen extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  if (loan.url != null && loan.url!.isNotEmpty) {
-                    _launchURL(loan.url!, context);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Application URL not available'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
+                  AdHelper.showRewardedAdWithNavigation(
+                    context,
+                    onComplete: () {
+                      if (loan.url != null && loan.url!.isNotEmpty) {
+                        if (context.mounted) {
+                          _launchURL(loan.url!, context);
+                        }
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Application URL not available'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A5F),

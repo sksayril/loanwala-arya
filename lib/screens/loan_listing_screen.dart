@@ -5,6 +5,7 @@ import '../providers/theme_provider.dart';
 import 'package:provider/provider.dart';
 import '../widgets/skeleton_loader.dart';
 import 'loan_details_screen.dart';
+import '../services/ad_helper.dart';
 
 class LoanListingScreen extends StatefulWidget {
   final String loanType;
@@ -268,13 +269,14 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
     
     return InkWell(
       onTap: () {
-        // Navigate directly to loan details (ads disabled)
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LoanDetailsScreen(loan: loan),
-          ),
-        );
+        if (context.mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoanDetailsScreen(loan: loan),
+            ),
+          );
+        }
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(
@@ -492,13 +494,14 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                  // Navigate directly to loan details (ads commented out)
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => LoanDetailsScreen(loan: loan),
-                    ),
-                  );
+                  if (context.mounted) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoanDetailsScreen(loan: loan),
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A5F),
@@ -677,12 +680,18 @@ class _LoanListingScreenState extends State<LoanListingScreen> {
                       ),
                       child: ElevatedButton(
                         onPressed: () {
-                          // Navigate directly to loan details
-                          Navigator.push(
+                          AdHelper.showRewardedAdWithNavigation(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => LoanDetailsScreen(loan: loan),
-                            ),
+                            onComplete: () {
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LoanDetailsScreen(loan: loan),
+                                  ),
+                                );
+                              }
+                            },
                           );
                         },
                         style: ElevatedButton.styleFrom(

@@ -325,12 +325,14 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
                         employmentType: _selectedEmploymentType,
                       );
                       
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const KycVerificationScreen(),
-                        ),
-                      );
+                      if (context.mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const KycVerificationScreen(),
+                          ),
+                        );
+                      }
                     } else if (_selectedEmploymentType == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
                          SnackBar(

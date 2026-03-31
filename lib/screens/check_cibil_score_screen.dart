@@ -4,6 +4,7 @@ import 'package:lottie/lottie.dart';
 import 'cibil_loading_screen.dart';
 import '../services/loan_data_service.dart';
 import '../services/loan_api_service.dart';
+import '../services/ad_helper.dart';
 
 class CheckCibilScreen extends StatefulWidget {
   const CheckCibilScreen({super.key});
@@ -400,78 +401,83 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
       child: ElevatedButton(
         onPressed: _isSubmitting ? null : () async {
           if (_formKey.currentState!.validate() && _agreedToTerms) {
-            // Save CIBIL data to service
-            _loanDataService.updateCibilData(
-              name: _nameController.text.trim(),
-              phoneNumber: _phoneController.text.trim(),
-              panNumber: _panController.text.trim(),
-              dateOfBirth: _dobController.text.trim(),
-            );
+            AdHelper.showRewardedAdWithNavigation(
+              context,
+              onComplete: () async {
+                // Save CIBIL data to service
+                _loanDataService.updateCibilData(
+                  name: _nameController.text.trim(),
+                  phoneNumber: _phoneController.text.trim(),
+                  panNumber: _panController.text.trim(),
+                  dateOfBirth: _dobController.text.trim(),
+                );
 
-            // Submit data to API
-            setState(() {
-              _isSubmitting = true;
-            });
+                // Submit data to API
+                setState(() {
+                  _isSubmitting = true;
+                });
 
-            try {
-              final requestBody = _loanDataService.getDataForApi();
-              final response = await LoanApiService.submitLoanData(requestBody);
-              
-              setState(() {
-                _isSubmitting = false;
-              });
+                try {
+                  final requestBody = _loanDataService.getDataForApi();
+                  final response = await LoanApiService.submitLoanData(requestBody);
+                  
+                  setState(() {
+                    _isSubmitting = false;
+                  });
 
-              if (response.success) {
-                // Navigate to loading screen on success
-                if (mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-                  );
-                }
-              } else {
-                // Show error message but still navigate
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        response.message,
-                        style: GoogleFonts.inter(),
+                  if (response.success) {
+                    // Navigate to loading screen on success
+                    if (context.mounted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+                      );
+                    }
+                  } else {
+                    // Show error message but still navigate
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            response.message,
+                            style: GoogleFonts.inter(),
+                          ),
+                          backgroundColor: Colors.orange,
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                      // Still navigate even if API call fails
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+                      );
+                    }
+                  }
+                } catch (e) {
+                  setState(() {
+                    _isSubmitting = false;
+                  });
+                  
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Error submitting data: ${e.toString().replaceAll('Exception: ', '')}',
+                          style: GoogleFonts.inter(),
+                        ),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 3),
                       ),
-                      backgroundColor: Colors.orange,
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                  // Still navigate even if API call fails
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-                  );
+                    );
+                    // Still navigate even if API call fails
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
+                    );
+                  }
                 }
-              }
-            } catch (e) {
-              setState(() {
-                _isSubmitting = false;
-              });
-              
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Error submitting data: ${e.toString().replaceAll('Exception: ', '')}',
-                      style: GoogleFonts.inter(),
-                    ),
-                    backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 3),
-                  ),
-                );
-                // Still navigate even if API call fails
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const CibilLoadingScreen()),
-                );
-              }
-            }
+              },
+            );
           } else if (!_agreedToTerms) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

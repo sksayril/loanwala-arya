@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'bank_verification_loader_screen.dart';
 import '../services/loan_data_service.dart';
 import '../services/loan_api_service.dart';
+import '../services/ad_helper.dart';
 
 class BankDetailsScreen extends StatefulWidget {
   const BankDetailsScreen({super.key});
@@ -268,83 +269,88 @@ class _BankDetailsScreenState extends State<BankDetailsScreen> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : () async {
                     if (_formKey.currentState!.validate() && _isConfirmed) {
-                      // Save bank details to service
-                      _loanDataService.updateBankDetails(
-                        bankName: _bankNameController.text.trim(),
-                        accountNumber: _accountController.text.trim(),
-                        ifscCode: _ifscController.text.trim(),
-                      );
+                      AdHelper.showRewardedAdWithNavigation(
+                        context,
+                        onComplete: () async {
+                          // Save bank details to service
+                          _loanDataService.updateBankDetails(
+                            bankName: _bankNameController.text.trim(),
+                            accountNumber: _accountController.text.trim(),
+                            ifscCode: _ifscController.text.trim(),
+                          );
 
-                      // Submit data to API
-                      setState(() {
-                        _isSubmitting = true;
-                      });
+                          // Submit data to API
+                          setState(() {
+                            _isSubmitting = true;
+                          });
 
-                      try {
-                        final requestBody = _loanDataService.getDataForApi();
-                        final response = await LoanApiService.submitLoanData(requestBody);
-                        
-                        setState(() {
-                          _isSubmitting = false;
-                        });
+                          try {
+                            final requestBody = _loanDataService.getDataForApi();
+                            final response = await LoanApiService.submitLoanData(requestBody);
+                            
+                            setState(() {
+                              _isSubmitting = false;
+                            });
 
-                        if (response.success) {
-                          // Navigate to loader on success
-                          if (mounted) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const BankVerificationLoaderScreen(),
-                              ),
-                            );
-                          }
-                        } else {
-                          // Show error message but still navigate
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  response.message,
-                                  style: GoogleFonts.inter(),
+                            if (response.success) {
+                              // Navigate to loader on success
+                              if (context.mounted) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const BankVerificationLoaderScreen(),
+                                  ),
+                                );
+                              }
+                            } else {
+                              // Show error message but still navigate
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      response.message,
+                                      style: GoogleFonts.inter(),
+                                    ),
+                                    backgroundColor: Colors.orange,
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                                // Still navigate even if API call fails
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const BankVerificationLoaderScreen(),
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            setState(() {
+                              _isSubmitting = false;
+                            });
+                            
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Error submitting data: ${e.toString().replaceAll('Exception: ', '')}',
+                                    style: GoogleFonts.inter(),
+                                  ),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 3),
                                 ),
-                                backgroundColor: Colors.orange,
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                            // Still navigate even if API call fails
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const BankVerificationLoaderScreen(),
-                              ),
-                            );
+                              );
+                              // Still navigate even if API call fails
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const BankVerificationLoaderScreen(),
+                                ),
+                              );
+                            }
                           }
-                        }
-                      } catch (e) {
-                        setState(() {
-                          _isSubmitting = false;
-                        });
-                        
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Error submitting data: ${e.toString().replaceAll('Exception: ', '')}',
-                                style: GoogleFonts.inter(),
-                              ),
-                              backgroundColor: Colors.red,
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                          // Still navigate even if API call fails
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const BankVerificationLoaderScreen(),
-                            ),
-                          );
-                        }
-                      }
+                        },
+                      );
                     } else if (!_isConfirmed) {
                        ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
