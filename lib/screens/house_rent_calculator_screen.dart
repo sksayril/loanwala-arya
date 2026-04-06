@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../services/ad_helper.dart';
+import '../widgets/native_ad_medium_card.dart';
 
 class HouseRentCalculatorScreen extends StatefulWidget {
   const HouseRentCalculatorScreen({super.key});
@@ -17,10 +20,28 @@ class _HouseRentCalculatorScreenState extends State<HouseRentCalculatorScreen> {
   double exemptHra = 0;
   double taxableHra = 0;
 
+  NativeAd? _nativeAd;
+
   @override
   void initState() {
     super.initState();
     _calculateHra();
+    _initializeAds();
+  }
+
+  Future<void> _initializeAds() async {
+    await AdHelper.refreshAdsSettings();
+    final native = await AdHelper.loadNativeAd();
+    if (!mounted) return;
+    setState(() {
+      _nativeAd = native;
+    });
+  }
+
+  @override
+  void dispose() {
+    _nativeAd?.dispose();
+    super.dispose();
   }
 
   void _calculateHra() {
@@ -68,6 +89,12 @@ class _HouseRentCalculatorScreenState extends State<HouseRentCalculatorScreen> {
                 ],
               ),
             ),
+            if (_nativeAd != null) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: NativeAdMediumCard(ad: _nativeAd!),
+              ),
+            ],
             // Content
             Expanded(
               child: SingleChildScrollView(

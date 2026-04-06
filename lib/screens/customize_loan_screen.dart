@@ -35,7 +35,13 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeAds();
     _loadRewardedAd();
+  }
+
+  Future<void> _initializeAds() async {
+    await AdHelper.refreshAdsSettings();
+    await AdHelper.preloadInterstitialAd();
   }
 
   @override
@@ -467,7 +473,11 @@ class _CustomizeLoanScreenState extends State<CustomizeLoanScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _agreedToTerms ? _showRewardedAdAndContinue : null,
+                  onPressed: _agreedToTerms
+                      ? () => AdHelper.handleClickWithInterstitial(
+                            onContinue: _showRewardedAdAndContinue,
+                          )
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B5CF6),
                     disabledBackgroundColor: Colors.grey[300],

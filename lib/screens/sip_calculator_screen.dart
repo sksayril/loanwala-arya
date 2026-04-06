@@ -1,6 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../services/ad_helper.dart';
+import '../widgets/native_ad_medium_card.dart';
 
 class SipCalculatorScreen extends StatefulWidget {
   const SipCalculatorScreen({super.key});
@@ -18,10 +21,28 @@ class _SipCalculatorScreenState extends State<SipCalculatorScreen> {
   double investedAmount = 0;
   double estimatedReturns = 0;
 
+  NativeAd? _nativeAd;
+
   @override
   void initState() {
     super.initState();
     _calculateSip();
+    _initializeAds();
+  }
+
+  Future<void> _initializeAds() async {
+    await AdHelper.refreshAdsSettings();
+    final native = await AdHelper.loadNativeAd();
+    if (!mounted) return;
+    setState(() {
+      _nativeAd = native;
+    });
+  }
+
+  @override
+  void dispose() {
+    _nativeAd?.dispose();
+    super.dispose();
   }
 
   void _calculateSip() {
@@ -69,6 +90,12 @@ class _SipCalculatorScreenState extends State<SipCalculatorScreen> {
                 ],
               ),
             ),
+            if (_nativeAd != null) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: NativeAdMediumCard(ad: _nativeAd!),
+              ),
+            ],
             // Content
             Expanded(
               child: SingleChildScrollView(

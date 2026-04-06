@@ -23,11 +23,23 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
 
   bool _agreedToTerms = false;
   RewardedAd? _rewardedAd;
+  BannerAd? _bannerAd;
 
   @override
   void initState() {
     super.initState();
+    _initializeAds();
     _loadRewardedAd();
+  }
+
+  Future<void> _initializeAds() async {
+    await AdHelper.refreshAdsSettings();
+    await AdHelper.preloadInterstitialAd();
+    final bannerAd = await AdHelper.loadBannerAd();
+    if (!mounted) return;
+    setState(() {
+      _bannerAd = bannerAd;
+    });
   }
 
   @override
@@ -37,6 +49,7 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     _panController.dispose();
     _dobController.dispose();
     _rewardedAd?.dispose();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -182,7 +195,8 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)), // 18 years ago
+      initialDate:
+          DateTime.now().subtract(const Duration(days: 365 * 18)), // 18 years ago
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -253,6 +267,15 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: _bannerAd == null
+          ? null
+          : SafeArea(
+              child: SizedBox(
+                height: _bannerAd!.size.height.toDouble(),
+                width: _bannerAd!.size.width.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
+            ),
     );
   }
 
@@ -500,7 +523,9 @@ class _CheckCibilScreenState extends State<CheckCibilScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: _showRewardedAdAndSubmit,
+        onPressed: () => AdHelper.handleClickWithInterstitial(
+          onContinue: _showRewardedAdAndSubmit,
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF2E7BFA),
           padding: const EdgeInsets.symmetric(vertical: 16),

@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class LoanApiService {
-  static const String baseUrl = 'https://apiloantrix.seotube.in';
+  // static const String baseUrl = 'https://7cvccltb-5010.inc1.devtunnels.ms';
+  static const String baseUrl = 'https://apieasy.seotube.in';
   static const String publicLoansEndpoint = '/api/public/loans';
   static const String publicCategoriesEndpoint = '/api/public/categories';
 
@@ -235,6 +236,111 @@ class LoanApiService {
       return ApplyNowStatus(isActive: false);
     }
   }
+
+  /// Fetch ads settings used to control ad visibility and frequency.
+  static Future<AdsSettingsResponse> fetchAdsSettings() async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/public/ads-settings');
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Request timeout. Please check your internet connection.');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final bool success = data['success'] as bool? ?? false;
+        final Map<String, dynamic> settingsMap = _parseAdsSettingsMap(data);
+
+        return AdsSettingsResponse(
+          success: success,
+          httpOk: true,
+          adsSettings: AdsSettings.fromJson(settingsMap),
+        );
+      }
+
+      return AdsSettingsResponse(
+        success: false,
+        httpOk: false,
+        adsSettings: const AdsSettings(),
+      );
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error fetching ads settings: $e');
+      return AdsSettingsResponse(
+        success: false,
+        httpOk: false,
+        adsSettings: const AdsSettings(),
+      );
+    }
+  }
+
+  /// Public app settings (e.g. forced store update). `GET /api/public/app-settings`
+  static Future<AppSettingsResponse> fetchAppSettings() async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/public/app-settings');
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Request timeout. Please check your internet connection.');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        final bool success = data['success'] as bool? ?? false;
+        final Map<String, dynamic> map =
+            (data['appSettings'] as Map?)?.cast<String, dynamic>() ?? {};
+
+        return AppSettingsResponse(
+          success: success,
+          appSettings: AppSettings.fromJson(map),
+        );
+      }
+
+      return AppSettingsResponse(
+        success: false,
+        appSettings: const AppSettings(),
+      );
+    } catch (e) {
+      print('Error fetching app settings: $e');
+      return AppSettingsResponse(
+        success: false,
+        appSettings: const AppSettings(),
+      );
+    }
+  }
+
+  /// Reads `adsSettings` from common API shapes: `adsSettings`, `AdsSettings`,
+  /// `ads_settings`, or nested `data.adsSettings`.
+  static Map<String, dynamic> _parseAdsSettingsMap(Map<String, dynamic> data) {
+    dynamic raw =
+        data['adsSettings'] ?? data['AdsSettings'] ?? data['ads_settings'];
+    if (raw is! Map) {
+      final inner = data['data'];
+      if (inner is Map) {
+        final m = Map<String, dynamic>.from(inner);
+        raw = m['adsSettings'] ?? m['AdsSettings'] ?? m['ads_settings'];
+      }
+    }
+    if (raw is Map) {
+      return Map<String, dynamic>.from(raw);
+    }
+    return <String, dynamic>{};
+  }
 }
 
 /// API Response wrapper
@@ -386,4 +492,161 @@ class ApplyNowStatus {
   final bool isActive;
 
   ApplyNowStatus({required this.isActive});
+}
+
+/// `GET /api/public/app-settings` response wrapper
+class AppSettingsResponse {
+  final bool success;
+  final AppSettings appSettings;
+
+  AppSettingsResponse({
+    required this.success,
+    required this.appSettings,
+  });
+}
+
+class AppSettings {
+  final bool appUpdateRequired;
+  final String? appUrl;
+
+  const AppSettings({
+    this.appUpdateRequired = false,
+    this.appUrl,
+  });
+
+  factory AppSettings.fromJson(Map<String, dynamic> json) {
+    final raw = json['appUrl'] as String?;
+    final trimmed = raw?.trim();
+    return AppSettings(
+      appUpdateRequired: json['appUpdateRequired'] as bool? ?? false,
+      appUrl: (trimmed != null && trimmed.isNotEmpty) ? trimmed : null,
+    );
+  }
+}
+
+class AdsSettingsResponse {
+  final bool success;
+  /// True when `GET /api/public/ads-settings` returned HTTP 200 and JSON was read.
+  /// Use this to apply [adsSettings] even if the JSON `success` flag is false.
+  final bool httpOk;
+  final AdsSettings adsSettings;
+
+  AdsSettingsResponse({
+    required this.success,
+    required this.httpOk,
+    required this.adsSettings,
+  });
+}
+
+class AdsSettings {
+  final bool allAdsEnabled;
+  final bool bannerAdsEnabled;
+  final bool nativeAdsEnabled;
+  final bool interstitialAdsEnabled;
+  final bool rewardedAdsEnabled;
+  final bool appOpenAdsEnabled;
+  final int interstitialAdsShowCounter;
+
+  /// AdMob unit IDs from `GET /api/public/ads-settings` (empty → client falls back).
+  final String? bannerAdsId;
+  final String? nativeAdsId;
+  final String? interstitialAdsId;
+  /// API typo; treated as alternate interstitial slot if `interstitialAdsId` is empty.
+  final String? interracialAdsId;
+  final String? rewardedAdsId;
+  final String? appOpenAdsId;
+
+  const AdsSettings({
+    this.allAdsEnabled = false,
+    this.bannerAdsEnabled = false,
+    this.nativeAdsEnabled = false,
+    this.interstitialAdsEnabled = false,
+    this.rewardedAdsEnabled = false,
+    this.appOpenAdsEnabled = false,
+    this.interstitialAdsShowCounter = 3,
+    this.bannerAdsId,
+    this.nativeAdsId,
+    this.interstitialAdsId,
+    this.interracialAdsId,
+    this.rewardedAdsId,
+    this.appOpenAdsId,
+  });
+
+  factory AdsSettings.fromJson(Map<String, dynamic> json) {
+    final bool interstitialOn = _asBool(json['interstitialAdsEnabled']) ||
+        _asBool(json['interracialAdsEnabled']);
+
+    return AdsSettings(
+      allAdsEnabled: _asBool(json['allAdsEnabled']),
+      bannerAdsEnabled: _asBool(json['bannerAdsEnabled']),
+      nativeAdsEnabled: _asBool(json['nativeAdsEnabled']),
+      interstitialAdsEnabled: interstitialOn,
+      rewardedAdsEnabled: _asBool(json['rewardedAdsEnabled']),
+      appOpenAdsEnabled: _asBool(json['appOpenAdsEnabled']),
+      interstitialAdsShowCounter:
+          (json['interstitialAdsShowCounter'] as num?)?.toInt() ?? 3,
+      bannerAdsId: _firstString(json, const [
+        'bannerAdsId',
+        'banner_ad_unit_id',
+        'bannerAdUnitId',
+      ]),
+      nativeAdsId: _firstString(json, const [
+        'nativeAdsId',
+        'nativeAdUnitId',
+        'native_ad_unit_id',
+        'native_ads_id',
+        'nativeUnitId',
+        'native_ads',
+      ]),
+      interstitialAdsId: _firstString(json, const [
+        'interstitialAdsId',
+        'interstitialAdUnitId',
+        'interstitial_ad_unit_id',
+      ]),
+      interracialAdsId: _firstString(json, const [
+        'interracialAdsId',
+        'interracialAdUnitId',
+      ]),
+      rewardedAdsId: _firstString(json, const [
+        'rewardedAdsId',
+        'rewardedAdUnitId',
+        'rewarded_ad_unit_id',
+      ]),
+      appOpenAdsId: _firstString(json, const [
+        'appOpenAdsId',
+        'appOpenAdUnitId',
+        'app_open_ad_unit_id',
+      ]),
+    );
+  }
+
+  static bool _asBool(dynamic v) {
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    if (v is String) {
+      final s = v.trim().toLowerCase();
+      return s == 'true' || s == '1' || s == 'yes';
+    }
+    return false;
+  }
+
+  static String? _firstString(Map<String, dynamic> json, List<String> keys) {
+    for (final k in keys) {
+      final t = _trimOrNullFromDynamic(json[k]);
+      if (t != null) return t;
+    }
+    return null;
+  }
+
+  static String? _trimOrNullFromDynamic(dynamic v) {
+    if (v == null) return null;
+    if (v is String) return _trimOrNull(v);
+    return null;
+  }
+
+  static String? _trimOrNull(String? s) {
+    if (s == null) return null;
+    final t = s.trim();
+    return t.isEmpty ? null : t;
+  }
 }

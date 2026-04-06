@@ -1,6 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../services/ad_helper.dart';
+import '../widgets/native_ad_medium_card.dart';
 
 class EmiCalculatorScreen extends StatefulWidget {
   const EmiCalculatorScreen({super.key});
@@ -18,10 +21,32 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
   double totalInterest = 0;
   double totalPayment = 0;
 
+  NativeAd? _nativeAd;
+  BannerAd? _bannerAd;
+
   @override
   void initState() {
     super.initState();
     _calculateEmi();
+    _initializeAds();
+  }
+
+  Future<void> _initializeAds() async {
+    await AdHelper.refreshAdsSettings();
+    final native = await AdHelper.loadNativeAd();
+    final banner = await AdHelper.loadBannerAd();
+    if (!mounted) return;
+    setState(() {
+      _nativeAd = native;
+      _bannerAd = banner;
+    });
+  }
+
+  @override
+  void dispose() {
+    _nativeAd?.dispose();
+    _bannerAd?.dispose();
+    super.dispose();
   }
 
   void _calculateEmi() {
@@ -68,6 +93,12 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
                 ],
               ),
             ),
+            if (_nativeAd != null) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: NativeAdMediumCard(ad: _nativeAd!),
+              ),
+            ],
             // Content
             Expanded(
               child: SingleChildScrollView(
@@ -177,6 +208,15 @@ class _EmiCalculatorScreenState extends State<EmiCalculatorScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: _bannerAd == null
+          ? null
+          : SafeArea(
+              child: SizedBox(
+                height: _bannerAd!.size.height.toDouble(),
+                width: _bannerAd!.size.width.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
+            ),
     );
   }
 

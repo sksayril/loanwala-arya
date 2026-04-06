@@ -1,8 +1,8 @@
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home_screen.dart'; 
+import '../services/ad_helper.dart';
+import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,6 +18,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
+    Future<void> bootstrapAds() async {
+      await AdHelper.refreshAdsSettings();
+      await Future.wait([
+        AdHelper.preloadAppOpenAd(),
+        AdHelper.preloadInterstitialAd(),
+      ]);
+    }
+
+    Future.microtask(bootstrapAds);
+
     _controller = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -31,11 +41,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
-        }
+        AdHelper.showAppOpenAdIfReady(() {
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            );
+          }
+        });
       }
     });
   }

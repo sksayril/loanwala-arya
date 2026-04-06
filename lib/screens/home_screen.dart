@@ -1,10 +1,15 @@
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'check_cibil_score_screen.dart';
 import 'customize_loan_screen.dart';
+import 'loan_products_screen.dart';
 import 'emi_calculator_screen.dart';
 import 'sip_calculator_screen.dart';
 import 'income_tax_calculator_screen.dart';
@@ -12,6 +17,12 @@ import 'vat_calculator_screen.dart';
 import 'house_rent_calculator_screen.dart';
 import '../services/loan_api_service.dart';
 import '../services/ad_helper.dart';
+
+/// Play Store listing for this app (`applicationId` in Android).
+const String _kPlayStorePackageId = 'com.easyloan.app';
+
+const String _kPrefHomeVisitCount = 'home_screen_visit_count';
+const String _kPrefRatingPromptDone = 'rating_prompt_completed';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,12 +35,299 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isApplyNowActive = false;
   bool _isLoading = true;
   RewardedAd? _rewardedAd;
+  BannerAd? _bannerAd;
 
   @override
   void initState() {
     super.initState();
-    _checkApplyNowStatus();
+    _bootstrapHome();
+    _initializeAds();
     _loadRewardedAd();
+    _trackHomeVisitAndMaybeShowRating();
+  }
+
+  Future<void> _markRatingPromptDone() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kPrefRatingPromptDone, true);
+  }
+
+  Future<void> _trackHomeVisitAndMaybeShowRating() async {
+    final prefs = await SharedPreferences.getInstance();
+    final int nextCount = (prefs.getInt(_kPrefHomeVisitCount) ?? 0) + 1;
+    await prefs.setInt(_kPrefHomeVisitCount, nextCount);
+
+    final bool alreadyDone = prefs.getBool(_kPrefRatingPromptDone) ?? false;
+    if (nextCount != 2 || alreadyDone) return;
+    if (!mounted) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showRatingStarDialog();
+    });
+  }
+
+  void _showRatingStarDialog() {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        int selected = 0;
+        return StatefulBuilder(
+          builder: (context, setLocal) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                'How would you rate Easy Loan?',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Your feedback helps us improve.',
+                    style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (i) {
+                      final int star = i + 1;
+                      return IconButton(
+                        onPressed: () => setLocal(() => selected = star),
+                        icon: Icon(
+                          star <= selected ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: Colors.amber.shade700,
+                          size: 40,
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    _markRatingPromptDone();
+                  },
+                  child: Text('Maybe later', style: GoogleFonts.inter()),
+                ),
+                FilledButton(
+                  onPressed: selected == 0
+                      ? null
+                      : () async {
+                          Navigator.of(dialogContext).pop();
+                          if (selected >= 4) {
+                            await _openPlayStoreListing();
+                            await _markRatingPromptDone();
+                          } else {
+                            if (mounted) _showInternalReviewDialog();
+                          }
+                        },
+                  child: const Text('Continue'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showInternalReviewDialog() {
+    final controller = TextEditingController();
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text(
+            'Tell us more',
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Please type your review below.',
+                  style: GoogleFonts.inter(fontSize: 14, color: Colors.black54),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                    hintText: 'Type your review…',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _markRatingPromptDone();
+              },
+              child: Text('Skip', style: GoogleFonts.inter()),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _markRatingPromptDone();
+                if (mounted) _showReviewSubmittedDialog();
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    ).whenComplete(controller.dispose);
+  }
+
+  void _showReviewSubmittedDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green.shade600, size: 28),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Thank you!',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Your review has been submitted. We appreciate your feedback.',
+            style: GoogleFonts.inter(fontSize: 15),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _openPlayStoreListing() async {
+    final Uri web = Uri.parse(
+      'https://play.google.com/store/apps/details?id=$_kPlayStorePackageId',
+    );
+    try {
+      if (!kIsWeb && Platform.isAndroid) {
+        final Uri market = Uri.parse('market://details?id=$_kPlayStorePackageId');
+        final bool opened = await launchUrl(
+          market,
+          mode: LaunchMode.externalApplication,
+        );
+        if (opened) return;
+      }
+      final bool openedWeb = await launchUrl(
+        web,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!openedWeb && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open Play Store.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open Play Store.')),
+        );
+      }
+    }
+  }
+
+  /// App settings are fetched first; then Apply Now status.
+  Future<void> _bootstrapHome() async {
+    final appResp = await LoanApiService.fetchAppSettings();
+    if (!mounted) return;
+
+    if (appResp.success &&
+        appResp.appSettings.appUpdateRequired &&
+        appResp.appSettings.appUrl != null) {
+      final uri = Uri.tryParse(appResp.appSettings.appUrl!);
+      if (uri != null &&
+          uri.hasScheme &&
+          (uri.scheme == 'http' || uri.scheme == 'https')) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _showForcedUpdateDialog(uri);
+        });
+      }
+    }
+
+    await _checkApplyNowStatus();
+  }
+
+  void _showForcedUpdateDialog(Uri storeUri) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Update required',
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          content: Text(
+            'A new version is available. Please update the app from the store.',
+            style: GoogleFonts.inter(fontSize: 15),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () async {
+                try {
+                  final ok = await launchUrl(
+                    storeUri,
+                    mode: LaunchMode.externalApplication,
+                  );
+                  if (!ok && mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not open the store link.'),
+                      ),
+                    );
+                  }
+                } catch (_) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Could not open the store link.'),
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _initializeAds() async {
+    await AdHelper.refreshAdsSettings();
+    await AdHelper.preloadInterstitialAd();
+    final bannerAd = await AdHelper.loadBannerAd();
+    if (!mounted) return;
+    setState(() {
+      _bannerAd = bannerAd;
+    });
   }
 
   void _loadRewardedAd() {
@@ -85,6 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _rewardedAd?.dispose();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -131,6 +430,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: _bannerAd == null
+          ? null
+          : SafeArea(
+              child: SizedBox(
+                height: _bannerAd!.size.height.toDouble(),
+                width: _bannerAd!.size.width.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
+            ),
     );
   }
 
@@ -181,9 +489,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 16),
                 GestureDetector(
-                  onTap: () {
-                    _showRewardedAd(context);
-                  },
+                  onTap: () => AdHelper.handleClickWithInterstitial(
+                    onContinue: () => _showRewardedAd(context),
+                  ),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                     decoration: BoxDecoration(
@@ -251,7 +559,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push<void>(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (context) => const LoanProductsScreen(),
+                      ),
+                    );
+                  },
                   child: Text(
                     'View All',
                     style: GoogleFonts.inter(
@@ -290,18 +605,20 @@ class _HomeScreenState extends State<HomeScreen> {
     final iconColor = color ?? const Color(0xFF2E7BFA);
     
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CustomizeLoanScreen(
-              loanType: title,
-              loanIcon: icon,
-              loanColor: iconColor,
+      onTap: () => AdHelper.handleClickWithInterstitial(
+        onContinue: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CustomizeLoanScreen(
+                loanType: title,
+                loanIcon: icon,
+                loanColor: iconColor,
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -396,12 +713,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCalcItem(BuildContext context, String title, Color color, Widget screen) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => screen),
-        );
-      },
+      onTap: () => AdHelper.handleClickWithInterstitial(
+        onContinue: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => screen),
+          );
+        },
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
