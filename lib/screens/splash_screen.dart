@@ -1,7 +1,8 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home_screen.dart'; 
+import '../services/disclaimer_service.dart';
+import 'disclaimer_screen.dart';
+import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -43,14 +44,16 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     _pulseController.repeat(reverse: true);
     _progressController.forward();
 
-    _progressController.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
-        }
-      }
+    _progressController.addStatusListener((status) async {
+      if (status != AnimationStatus.completed) return;
+      if (!mounted) return;
+      final accepted = await DisclaimerService.hasAcceptedDisclaimer();
+      if (!mounted) return;
+      final Widget next =
+          accepted ? const HomeScreen() : const DisclaimerScreen();
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (context) => next),
+      );
     });
   }
 

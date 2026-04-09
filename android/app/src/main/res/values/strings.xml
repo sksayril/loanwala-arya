@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Super Loan</string>
+    <string name="facebook_app_id">1363430877341928</string>
+    <!-- Meta App Dashboard → Settings → Advanced → Client token (same value as iOS Info.plist) -->
+    <string name="facebook_client_token">REPLACE_WITH_YOUR_CLIENT_TOKEN</string>
+    <string name="fb_login_protocol_scheme">fb1363430877341928</string>
+</resources>

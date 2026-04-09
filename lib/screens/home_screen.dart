@@ -1,54 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'check_cibil_score_screen.dart';
-import 'customize_loan_screen.dart';
+import 'financial_quiz_screen.dart';
+import 'loan_application_quiz_screen.dart';
 import 'emi_calculator_screen.dart';
 import 'sip_calculator_screen.dart';
 import 'income_tax_calculator_screen.dart';
 import 'vat_calculator_screen.dart';
 import 'house_rent_calculator_screen.dart';
-import '../services/loan_api_service.dart';
 import '../services/ad_helper.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  bool _isApplyNowActive = false;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkApplyNowStatus();
-  }
-
-  Future<void> _checkApplyNowStatus() async {
-    try {
-      final status = await LoanApiService.checkApplyNowStatus();
-      if (mounted) {
-        setState(() {
-          _isApplyNowActive = status.isActive;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error checking Apply Now status: $e');
-      // On error, default to inactive
-      if (mounted) {
-        setState(() {
-          _isApplyNowActive = false;
-          _isLoading = false;
-        });
-      }
-    }
-  }
 
   Future<void> _onCheckNowClicked(BuildContext context) async {
     AdHelper.showRewardedAdWithNavigation(
@@ -57,8 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
         if (context.mounted) {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const CheckCibilScreen(),
+            MaterialPageRoute<void>(
+              builder: (context) => const FinancialQuizScreen(),
             ),
           );
         }
@@ -82,11 +45,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _buildCibilScoreCard(context),
                     const SizedBox(height: 24),
-                    // Only show loan type section if isActive is true
-                    if (_isApplyNowActive) ...[
-                      _buildLoanTypeSection(),
-                      const SizedBox(height: 24),
-                    ],
+                    _buildLoanTypeSection(),
+                    const SizedBox(height: 24),
                     _buildCalculatorsSection(context),
                   ],
                 ),
@@ -153,14 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCibilScoreCard(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const CheckCibilScreen(),
-          ),
-        );
-      },
+      onTap: () => _onCheckNowClicked(context),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
@@ -250,37 +203,34 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Loan Trust label
                       
                       const SizedBox(height: 6),
-                      // Check Now button
-                      GestureDetector(
-                        onTap: () => _onCheckNowClicked(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                            ),
+                      // Check Now (entire card is tappable via parent)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Check Now',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const Icon(
-                                Icons.arrow_forward_rounded,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Check Now',
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
-                                size: 16,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -418,11 +368,13 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => CustomizeLoanScreen(
+          MaterialPageRoute<void>(
+            builder: (context) => LoanApplicationQuizScreen(
               loanType: loanType,
               loanIcon: icon,
-              loanColor: iconColor,
+              accentColor: iconColor,
+              iconBgColor: iconBgColor,
+              cardBgColor: cardBgColor,
             ),
           ),
         );
