@@ -50,17 +50,17 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>fb1363430877341928</string>
+				<string>fb1622082262369468</string>
 			</array>
 		</dict>
 	</array>
 	<key>FacebookAppID</key>
-	<string>1363430877341928</string>
+	<string>1622082262369468</string>
 	<key>FacebookClientToken</key>
-	<string>REPLACE_WITH_YOUR_CLIENT_TOKEN</string>
+	<string>a4d2f977d951acae5b8aef319e4126ae</string>
 	<key>FacebookDisplayName</key>
 	<string>Super Loan</string>
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3922595204055302~6505584891</string>
+	<string>ca-app-pub-7664893030317051~8145229306</string>
 </dict>
 </plist>

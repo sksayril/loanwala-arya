@@ -7,11 +7,11 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 class AdHelper {
   /// AdMob unit IDs (production).
   static const String nativeAdUnitId =
-      'ca-app-pub-3922595204055302/3907936557';
+      '/21753324030,23348385483/com.aryatechsuperloan_Native';
   static const String interstitialAdUnitId =
-      'ca-app-pub-3922595204055302/1045534720';
+      '/21753324030,23348385483/com.aryatechsuperloan_Interstitial';
   static const String rewardedAdUnitId =
-      'ca-app-pub-3922595204055302/7587033593';
+      '/21753324030,23348385483/com.aryatechsuperloan_Rewarded';
 
   /// Load an interstitial ad. Returns null on failure or unsupported platforms.
   static Future<InterstitialAd?> loadInterstitialAd() async {

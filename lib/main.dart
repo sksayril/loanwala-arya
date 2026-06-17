@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:facebook_app_events/facebook_app_events.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'screens/splash_screen.dart';
 import 'providers/theme_provider.dart';
 
@@ -9,13 +11,23 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await _initFirebaseAnalytics();
   await MobileAds.instance.initialize();
   await _initMetaAppEvents();
   runApp(const MyApp());
 }
 
-/// Meta (Facebook) App Events — App ID 1363430877341928. Set the client token in
-/// `android/.../values/strings.xml` and `ios/Runner/Info.plist` (Meta → App → Settings → Advanced).
+Future<void> _initFirebaseAnalytics() async {
+  if (kIsWeb) return;
+  try {
+    await Firebase.initializeApp();
+    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(true);
+  } catch (_) {
+    // Ignore startup analytics failures to avoid blocking app launch.
+  }
+}
+
+/// Meta (Facebook) App Events — App ID 1622082262369468 (client token in native resources).
 Future<void> _initMetaAppEvents() async {
   if (kIsWeb) return;
   try {
@@ -23,7 +35,7 @@ Future<void> _initMetaAppEvents() async {
     await facebookAppEvents.setGraphApiVersion('v24.0');
     await facebookAppEvents.activateApp();
   } catch (_) {
-    // Invalid/missing client token until configured in native resources.
+    // Ignore Meta SDK startup failures so the app still launches.
   }
 }
 

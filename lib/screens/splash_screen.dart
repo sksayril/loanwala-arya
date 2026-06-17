@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/disclaimer_service.dart';
+import '../services/in_app_update_service.dart';
 import 'disclaimer_screen.dart';
 import 'home_screen.dart';
 
@@ -20,6 +21,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    InAppUpdateService.checkForUpdate();
     
     // Progress bar animation
     _progressController = AnimationController(

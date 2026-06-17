@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "720530791070",
+    "project_id": "super-loan-c6e73",
+    "storage_bucket": "super-loan-c6e73.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:720530791070:android:8b020104593c11968af98f",
+        "android_client_info": {
+          "package_name": "com.aryatechsuperloan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbQLXR9bkBnHFawnx4FNOXNtWXUGM1SsY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
